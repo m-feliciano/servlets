@@ -1,4 +1,11 @@
-<c:set value="view/inventory" var="inventoryLink"/>
+<%--
+    Document   : url.jspf
+    Todo       : Split it url into multiple files for each module, so that it will be easy to manage.
+--%>
+
+<c:set value="view" var="context"/>
+
+<c:set value="${context}/inventory" var="inventoryLink"/>
 <c:url value="/${inventoryLink}/new" var="newItem"/>
 <c:url value="/${inventoryLink}/delete" var="deleteItem"/>
 <c:url value="/${inventoryLink}/list" var="listInventories"/>
@@ -6,7 +13,7 @@
 <c:url value="/${inventoryLink}/create" var="createItem"/>
 <c:url value="/${inventoryLink}/update" var="updateItem"/>
 
-<c:set value="view/product" var="productLink"/>
+<c:set value="${context}/product" var="productLink"/>
 <c:url value="/${productLink}/new" var="newProduct"/>
 <c:url value="/${productLink}/list" var="listProducts"/>
 <c:url value="/${productLink}/delete" var="deleteProduct"/>
@@ -14,7 +21,7 @@
 <c:url value="/${productLink}/create" var="createProduct"/>
 <c:url value="/${productLink}/update" var="updateProduct"/>
 
-<c:set value="view/category" var="categoryLink"/>
+<c:set value="${context}/category" var="categoryLink"/>
 <c:url value="/${categoryLink}/new" var="newCategory"/>
 <c:url value="/${categoryLink}/delete" var="deleteCategory"/>
 <c:url value="/${categoryLink}/list" var="listCategories"/>
@@ -22,14 +29,14 @@
 <c:url value="/${categoryLink}/create" var="createCategory"/>
 <c:url value="/${categoryLink}/update" var="updateCategory"/>
 
-<c:set value="view/login" var="loginLink"/>
-<c:url value="/${loginLink}/loginForm" var="loginPage"/>
+<c:set value="${context}/login" var="loginLink"/>
+<c:url value="/${loginLink}/form" var="loginPage"/>
 <c:url value="/${loginLink}/login" var="login"/>
 <c:url value="/${loginLink}/logout" var="logout"/>
 <c:url value="/${loginLink}/registerPage" var="registerPage"/>
-<c:url value="/${loginLink}/register" var="registerUser"/>
 
-<c:set value="view/user" var="userLink"/>
+<c:set value="${context}/user" var="userLink"/>
+<c:url value="/${userLink}/registerUser" var="registerUser"/>
 <c:url value="/${userLink}/edit" var="editUser"/>
 <c:url value="/${userLink}/delete" var="deleteUser"/>
 <c:url value="/${userLink}/list" var="listUsers"/>

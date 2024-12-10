@@ -1,39 +1,45 @@
 package com.dev.servlet.mapper;
 
-import com.dev.servlet.dto.UserDto;
+import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.pojo.User;
+import lombok.NoArgsConstructor;
 
-public final class UserMapper {
-    private UserMapper() {
-    }
+@NoArgsConstructor
+public final class UserMapper extends BaseMapper<User, UserDTO> {
 
-    public static UserDto from(User user) {
+    public static UserDTO from(User user) {
         if (user == null) return null;
-        UserDto dto = new UserDto(user.getId());
-        dto.setLogin(user.getLogin());
-        dto.setToken(user.getToken());
-        dto.setImgUrl(user.getImgUrl());
-        dto.setStatus(user.getStatus());
-        dto.setPerfis(user.getPerfis());
-        return dto;
+        return UserDTO.builder()
+                .id(user.getId())
+                .login(user.getLogin())
+                .imgUrl(user.getImgUrl())
+                .perfis(user.getPerfis())
+                .config(user.getConfig())
+                .build();
     }
 
-    public static UserDto onlyId(User user) {
+    public static UserDTO onlyId(User user) {
         if (user == null) return null;
-        UserDto userDto = new UserDto(user.getId());
-        userDto.setLogin(user.getLogin());
-        return userDto;
+        return UserDTO.builder().id(user.getId()).login(user.getLogin()).build();
     }
 
-    public static User from(UserDto dto) {
+    public static User from(UserDTO dto) {
         if (dto == null) return null;
         User user = new User(dto.getId());
         user.setLogin(dto.getLogin());
-        user.setStatus(dto.getStatus());
-        user.setToken(dto.getToken());
         user.setImgUrl(dto.getImgUrl());
-        user.setPassword(dto.getPassword());
         user.setPerfis(dto.getPerfis());
+        user.setConfig(dto.getConfig());
         return user;
+    }
+
+    @Override
+    public UserDTO fromEntity(User object) {
+        return from(object);
+    }
+
+    @Override
+    public User toEntity(UserDTO object) {
+        return from(object);
     }
 }

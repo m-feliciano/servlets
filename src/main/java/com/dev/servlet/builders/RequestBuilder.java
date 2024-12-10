@@ -1,79 +1,43 @@
 package com.dev.servlet.builders;
 
-import com.dev.servlet.pojo.records.StandardRequest;
+import com.dev.servlet.pojo.records.KeyPair;
 import com.dev.servlet.pojo.records.Query;
-import com.dev.servlet.pojo.records.RequestObject;
+import com.dev.servlet.pojo.records.Request;
 import com.dev.servlet.utils.URIUtils;
+import lombok.Builder;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
+import java.util.List;
 
+/**
+ * This class is used to build the {@link Request} object.
+ *
+ * @author marcelo.feliciano
+ * @since 1.4.0
+ */
+@Builder(builderClassName = "RequestBuilderBuilder")
 public class RequestBuilder {
 
-    private final Map<String, Object> parameters;
-
-    public static RequestBuilder builder() {
-        return new RequestBuilder();
-    }
-
-    public RequestBuilder() {
-        parameters = new java.util.HashMap<>();
-    }
-
-    public RequestBuilder token(String token) {
-        this.parameters.put("token", token);
-        return this;
-    }
-
-    public RequestBuilder service(String service) {
-        this.parameters.put("service", service);
-        return this;
-    }
-
-    public RequestBuilder request(HttpServletRequest request) {
-        this.parameters.put("request", request);
-        return this;
-    }
-
-    public RequestBuilder response(HttpServletResponse response) {
-        this.parameters.put("response", response);
-        return this;
-    }
-
-    public StandardRequest build() {
-        var httpServletRequest = (HttpServletRequest) this.parameters.get("request");
-        var httpServletResponse = (HttpServletResponse) this.parameters.get("response");
-
-        if (httpServletRequest == null || httpServletResponse == null) {
-            throw new IllegalArgumentException("Request and response are required");
-        }
-
-        String service = URIUtils.service(httpServletRequest);
-        this.parameters.putIfAbsent("service", service);
-
-        String action = URIUtils.action(httpServletRequest);
-        this.parameters.putIfAbsent("action", action);
-
-        Long id = URIUtils.recourceId(httpServletRequest);
-        this.parameters.putIfAbsent("id", id);
-
-        RequestObject requestObject = new RequestObject(service, action, id,
-                (Query) httpServletRequest.getAttribute("query"),
-                (String) this.parameters.get("token"));
-
-        return new StandardRequest(httpServletRequest, httpServletResponse, requestObject);
-    }
+    private final HttpServletRequest httpServletRequest;
 
     /**
-     * This action is used to get the query from the request.
+     * This build method will be used to create the {@link Request} from the {@link HttpServletRequest}.
      *
-     * @return
+     * @author marcelo.feliciano
      */
-    public RequestBuilder query() {
-        var httpServletRequest = (HttpServletRequest) this.parameters.get("request");
-        httpServletRequest.setAttribute("query", URIUtils.query(httpServletRequest));
-        return this;
-    }
+    public static class RequestBuilderBuilder {
+        public Request build() {
+            String endpoint = URIUtils.getEndpoint(httpServletRequest);
+            String resourceId = URIUtils.getResourceId(httpServletRequest);
+            Query query = URIUtils.getQuery(httpServletRequest);
+            List<KeyPair> parameters = URIUtils.getParameters(httpServletRequest);
 
+            return Request.builder()
+                    .endpoint(endpoint)
+                    .entityId(resourceId)
+                    .query(query)
+                    .parameters(parameters)
+                    .build();
+        }
+    }
 }

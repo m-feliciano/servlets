@@ -1,44 +1,56 @@
 package com.dev.servlet.dao;
 
+import com.dev.servlet.pojo.records.Pagination;
+import com.dev.servlet.utils.ClassUtil;
+import lombok.NoArgsConstructor;
+import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import java.util.List;
+import javax.persistence.TypedQuery;
+import java.io.Serializable;
+import java.util.Collection;
 
-public abstract class BaseDAO<T, E> {
-    protected EntityManager em;
-    private Class<T> entityClass;
-    protected static final Logger logger = LoggerFactory.getLogger(BaseDAO.class);
+@NoArgsConstructor
+public abstract class BaseDAO<T, E> implements Serializable {
 
-    protected BaseDAO() {
-        // Empty constructor
-    }
-
-    protected BaseDAO(Class<T> entityClass) {
-        this.entityClass = entityClass;
-    }
+    protected static final Logger LOGGER = LoggerFactory.getLogger(BaseDAO.class);
+    protected static final String STATUS = "status";
+    protected static final String USER = "user";
+    protected static final String ID = "id";
+    public static final String NOT_IMPLEMENTED = "Not implemented";
 
     @Inject
-    public void setDependencies(EntityManager em) {
+    protected EntityManager em;
+    private Class<T> specialization;
+
+    protected BaseDAO(EntityManager em) {
         this.em = em;
     }
 
-    public T findById(E id) {
-        return em.find(entityClass, id);
+    @PostConstruct
+    public void init() {
+        specialization = ClassUtil.getGenericType(this.getClass());
     }
 
-    public T save(T object) {
+
+    public T findById(E id) {
+        return em.find(specialization, id);
+    }
+
+    public void save(T object) {
         try {
             this.beginTransaction();
             this.em.persist(object);
             this.commitTransaction();
+
         } catch (Exception e) {
-            logger.error("Error saving object: {}", e.getMessage());
+            LOGGER.error("Error saving object: {}", e.getMessage());
             rollbackTransaction();
         }
-        return object;
     }
 
     public T update(T object) {
@@ -48,7 +60,7 @@ public abstract class BaseDAO<T, E> {
             this.commitTransaction();
             return object;
         } catch (Exception e) {
-            logger.error("Error updating object: {}", e.getMessage());
+            LOGGER.error("Error updating object: {}", e.getMessage());
             rollbackTransaction();
         }
         return null;
@@ -59,60 +71,109 @@ public abstract class BaseDAO<T, E> {
     }
 
     public T find(T object) {
-        return em.find(entityClass, object);
+        return em.find(specialization, object);
     }
 
-    public List<T> findAll() {
-        return em.createQuery("SELECT t FROM " + entityClass.getSimpleName() + " t", entityClass)
-                .getResultList();
-    }
-
-    public void close() {
-        if (em.isOpen()) {
-            em.close();
-        }
-    }
-
-    public void beginTransaction() {
+    protected void beginTransaction() {
         if (!em.getTransaction().isActive()) {
             em.getTransaction().begin();
         }
     }
 
-    public void commitTransaction() {
+    protected void commitTransaction() {
         try {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().commit();
-            }
+            beginTransaction();
+            em.getTransaction().commit();
         } catch (Exception e) {
-            logger.error("Error committing transaction: {}", e.getMessage());
+            LOGGER.error("Error committing transaction: {}", e.getMessage());
             rollbackTransaction();
         }
     }
 
-    public void rollbackTransaction() {
+    protected void rollbackTransaction() {
         try {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
         } catch (Exception e) {
-            logger.error("Error rolling back transaction: {}", e.getMessage());
+            LOGGER.error("Error rolling back transaction: {}", e.getMessage());
         }
     }
 
-    public void saveWithoutCommit(T object) {
-        em.persist(object);
+    /**
+     * Get a new opened session
+     *
+     * @return {@link Session}
+     */
+    protected Session getNewOpenSession() {
+        Session session = em.unwrap(Session.class);
+        session.beginTransaction();
+        return session;
     }
 
-    public void updateWithoutCommit(T object) {
-        em.merge(object);
+    /**
+     * Get all results with pagination
+     *
+     * @param ids        {@link Collection} of {@link E} product ids
+     * @param pagination {@link Pagination}
+     * @return {@link Collection} of {@link T}
+     */
+    public Collection<T> getAllPageable(Collection<E> ids, Pagination pagination) {
+        //language=HQL
+        String query = "SELECT p FROM " + specialization.getSimpleName() + " p WHERE p.identifier IN :ids ORDER BY p.id";
+        query = query.replace("identifier", sanitize(getIdentifier()));
+
+        TypedQuery<T> tTypedQuery = em.createQuery(query, specialization)
+                .setParameter("ids", ids)
+                .setFirstResult(pagination.getFirstResult())
+                .setMaxResults(pagination.getPageSize());
+
+        return tTypedQuery.getResultList();
     }
 
-    public void deleteWithoutCommit(T object) {
-        em.remove(object);
+    /**
+     * Get all results by ids
+     *
+     * @param ids {@link Collection} of {@link E} ids
+     * @return {@link Collection} of {@link T} products
+     */
+    public Collection<T> getAllByIds(Collection<E> ids) {
+        //language=HQL
+        String query = "SELECT p FROM " + specialization.getSimpleName() + " p WHERE p.id IN :ids ORDER BY p.id";
+
+        TypedQuery<T> typedQuery = em.createQuery(query, specialization);
+        return typedQuery.setParameter("ids", ids).getResultList();
     }
 
-    public void flush() {
-        em.flush();
+    /**
+     * Get the identifier
+     *
+     * @return {@link String} identifier
+     */
+    protected String getIdentifier() {
+        return ID;
     }
+
+    private CharSequence sanitize(String identifier) {
+        return identifier.replaceAll("[^a-zA-Z0-9]", "");
+    }
+
+    /**
+     * Get the id of all results
+     *
+     * @param filter {@link T} specialization
+     * @return {@link Collection} of {@link E} identifiers of objects
+     * @throws UnsupportedOperationException if not implemented
+     */
+    public Collection<E> findAllOnlyIds(T filter) {
+        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    }
+
+    /**
+     * Find all
+     *
+     * @param object {@link T}
+     * @return {@link Collection} of {@link T}
+     */
+    public abstract Collection<T> findAll(T object);
 }

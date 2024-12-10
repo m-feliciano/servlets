@@ -1,33 +1,69 @@
 package com.dev.servlet.utils;
 
-import com.dev.servlet.dto.UserDto;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-// TODO add ehCache, set a time policy
+/**
+ * Utility class for managing cache entries.
+ *
+ * @since 1.0.0
+ */
 public final class CacheUtil {
-    // token, cacheKey, collection
-    private static final Map<String, Map<String, Collection<?>>> IN_MEMORY_CACHE = Collections.synchronizedMap(new HashMap<>());
+
+    private static final Map<String, Map<String, CacheEntry>> IN_MEMORY_CACHE = new ConcurrentHashMap<>();
+
+    private static final long EXPIRATION_TIME = TimeUnit.MINUTES.toMillis(
+            PropertiesUtil.getProperty("cache.expiration.time", 1440L) // 1 day
+    );
+
+    // ScheduledExecutorService to clear expired entries
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    static {
+        // Schedule a task to clear expired entries every EXPIRATION_TIME milliseconds
+        scheduler.scheduleAtFixedRate(
+                CacheUtil::clearExpiredEntries,
+                EXPIRATION_TIME, EXPIRATION_TIME, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Cache entry (holds the responseData and timestamp).
+     *
+     * @param data
+     * @param timestamp
+     */
+    private record CacheEntry(Collection<?> data, long timestamp) {
+        // Empty record
+    }
 
     private CacheUtil() {
+        // Private constructor to prevent instantiation
     }
 
     public static void set(String key, String token, Collection<? extends Serializable> collection) {
-        IN_MEMORY_CACHE.putIfAbsent(token, new HashMap<>());
+        IN_MEMORY_CACHE.putIfAbsent(token, new ConcurrentHashMap<>());
         String cacheKey = getCacheKey(key, token);
-        getHash(token).put(cacheKey, collection);
+        CacheEntry entry = new CacheEntry(collection, System.currentTimeMillis());
+        getHash(token).put(cacheKey, entry);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> List<T> get(String key, String token) {
-        IN_MEMORY_CACHE.putIfAbsent(token, new HashMap<>());
+        IN_MEMORY_CACHE.putIfAbsent(token, new ConcurrentHashMap<>());
         String cacheKey = getCacheKey(key, token);
-        return (List<T>) getHash(token).get(cacheKey);
+        CacheEntry entry = getHash(token).get(cacheKey);
+        if (entry != null && !isExpired(entry)) {
+            return (List<T>) entry.data();
+        }
+
+        return Collections.emptyList();
     }
 
     public static void clear(String key, String token) {
@@ -36,14 +72,26 @@ public final class CacheUtil {
     }
 
     public static void clearAll(String token) {
-        IN_MEMORY_CACHE.remove(token);
+        if (token != null) {
+            IN_MEMORY_CACHE.remove(token);
+        }
     }
 
-    private static Map<String, Collection<?>> getHash(String token) {
+    private static Map<String, CacheEntry> getHash(String token) {
         return IN_MEMORY_CACHE.get(token);
     }
 
     private static String getCacheKey(String key, String token) {
         return "%s_%s".formatted(key, token);
+    }
+
+    private static boolean isExpired(CacheEntry entry) {
+        return System.currentTimeMillis() - entry.timestamp() > EXPIRATION_TIME;
+    }
+
+    private static void clearExpiredEntries() {
+        for (Map<String, CacheEntry> tokenCache : IN_MEMORY_CACHE.values()) {
+            tokenCache.values().removeIf(CacheUtil::isExpired);
+        }
     }
 }

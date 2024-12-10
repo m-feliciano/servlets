@@ -8,7 +8,7 @@
 <title>Product: ${ product.name }</title>
 
 <div class="main">
-    <form>
+    <div class="row">
         <div class="col-md-6">
             <div class="mb-3">
                 <div class="row">
@@ -24,23 +24,11 @@
                     </div>
                 </div>
             </div>
-            <c:if test="${ not empty product.url }">
-                <div class="text-center p-3">
-                    <img class="img-square fit-img" src="${ product.url }" alt="Image of product ${ product.name }">
-                </div>
-            </c:if>
-
             <div class="mb-3">
                 <label for="inputName" class="form-label">NAME</label>
                 <input type="text" name="name" class="form-control" id="inputName"
                        placeholder="Product name" value="${ product.name }" autocomplete="name"
                        minlength="4" readonly/>
-            </div>
-            <div class="mb-3">
-                <label for="inputDescription" class="form-label">DESCRIPTION</label>
-                <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="Simple Description" readonly rows="4" cols="auto">
-                    ${ product.description }</textarea>
             </div>
             <div class="mb-4">
                 <div class="row justify-content-end">
@@ -56,14 +44,52 @@
                     </div>
                 </div>
             </div>
+            <div class="mb-3">
+                <label for="inputDescription" class="form-label">DESCRIPTION</label>
+                <textarea name="description" class="form-control" id="inputDescription"
+                          placeholder="Simple Description" readonly rows="4" cols="auto">
+                    ${ product.description }</textarea>
+            </div>
+            <c:if test="${ not empty product.url and not product.url eq '' }">
+                <div class="mb-3">
+                    <label for="inputUrl" class="form-label">URL</label>
+                    <input type="text" name="url" class="form-control" id="inputUrl"
+                           placeholder="URL" value="${ product.url }" readonly/>
+                </div>
+            </c:if>
+
             <div class="row justify-content-end mr-0 mb20">
-                <a type="button" href="${ editProduct }/${ product.id }" class="btn btn-success mr-2">
+                <jsp:include page="/WEB-INF/view/components/buttons/customButton.jsp">
+                    <jsp:param name="btnLabel" value="Back"/>
+                    <jsp:param name="btnType" value="button"/>
+                    <jsp:param name="btnClass" value="btn btn-light"/>
+                    <jsp:param name="btnIcon" value="bi bi-arrow-left"/>
+                    <jsp:param name="btnOnclick" value="onclick='window.location.href=`${ listProducts }`'"/>
+                    <jsp:param name="btnId" value="id='backButton'"/>
+                </jsp:include>
+
+                <span class="mr-2"></span>
+
+                <a type="button" href="${ editProduct }/${ product.id }" class="btn btn-success">
                     Edit <i class="bi bi-pencil-square"></i>
                 </a>
-                <a type="button" href="${ listProducts }" class="btn btn-light">Go back</a>
             </div>
         </div>
-    </form>
+
+        <div class="col-md-6 text-center mt30">
+            <div class="mb-3">
+                <c:choose>
+                    <c:when test="${ empty product.url }">
+                        <img src="<c:url value='/assets/no_image_available.png'/>"
+                             class="img-thumbnail" alt="No image available" width="60%" height="60%"/>
+                    </c:when>
+                    <c:otherwise>
+                        <img src="${ product.url }" class="img-thumbnail" alt="Product Image" width="60%" height="60%"/>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </div>
+    </div>
 </div>
 <!-- footer -->
 <jsp:include page="/WEB-INF/view/components/footer.jsp"/>

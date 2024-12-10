@@ -1,38 +1,24 @@
 package com.dev.servlet.pojo.records;
 
+import com.dev.servlet.pojo.enums.Order;
+import com.dev.servlet.pojo.enums.Sort;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter(AccessLevel.NONE)
+@Builder
+@AllArgsConstructor
 public class Pagination implements java.io.Serializable {
-    private int totalRecords;
-    private final int currentPage;
-    private final int pageSize;
+    @Setter(AccessLevel.PUBLIC)
+    private Integer totalRecords;
+    private final Integer currentPage;
+    private final Integer pageSize;
     private final Sort sort;
     private final Order order;
-
-    public Pagination(int currentPage, int size, Sort sort, Order order) {
-        this.pageSize = size;
-        this.currentPage = currentPage;
-        this.sort = sort;
-        this.order = order;
-    }
-
-    public int getCurrentPage() {
-        return currentPage;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public Sort getSort() {
-        return sort;
-    }
-
-    public void setTotalRecords(int totalRecords) {
-        this.totalRecords = totalRecords;
-    }
-
-    public int getTotalRecords() {
-        return totalRecords;
-    }
 
     public int getTotalPages() {
         return Math.max((int) Math.ceil(totalRecords * 1.0 / pageSize), 1);
@@ -42,7 +28,4 @@ public class Pagination implements java.io.Serializable {
         return (currentPage - 1) * pageSize;
     }
 
-    public int getPageSize() {
-        return pageSize;
-    }
 }

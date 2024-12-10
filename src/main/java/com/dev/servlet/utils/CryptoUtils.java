@@ -93,17 +93,17 @@ public final class CryptoUtils {
 
             int sevenDays = 7 * 24 * 60 * 60 * 1000;
 
-            String jwtToken = JWT.create()
+            long currentTimeMillis = System.currentTimeMillis();
+            return JWT.create()
                     .withIssuer("Servlet")
-                    .withSubject("User Authentication")
+                    .withSubject("Authentication")
                     .withClaim("userId", user.getId())
                     .withArrayClaim("roles", user.getPerfis().toArray(new Long[0]))
                     .withIssuedAt(new Date())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + sevenDays))
+                    .withExpiresAt(new Date(currentTimeMillis + sevenDays))
                     .withJWTId(UUID.randomUUID().toString())
-//                    .withNotBefore(new Date(System.currentTimeMillis() + 1000L))
+//                    .withNotBefore(new Date(currentTimeMillis + 1000L))
                     .sign(algorithm);
-            return jwtToken;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -133,6 +133,7 @@ public final class CryptoUtils {
      * Get the user from a token
      *
      * @param token
+     * @return {@link User}
      */
     public static User getUser(String token) {
         DecodedJWT decodedJWT = JWT.decode(token);

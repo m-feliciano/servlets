@@ -1,170 +1,199 @@
 package com.dev.servlet.business;
 
-import com.dev.servlet.business.base.BaseRequest;
 import com.dev.servlet.controllers.UserController;
 import com.dev.servlet.dto.ServiceException;
+import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.interfaces.ResourceMapping;
 import com.dev.servlet.interfaces.ResourcePath;
 import com.dev.servlet.mapper.UserMapper;
 import com.dev.servlet.pojo.User;
 import com.dev.servlet.pojo.enums.PerfilEnum;
 import com.dev.servlet.pojo.enums.StatusEnum;
-import com.dev.servlet.pojo.records.StandardRequest;
+import com.dev.servlet.pojo.records.Request;
+import com.dev.servlet.pojo.records.Response;
 import com.dev.servlet.utils.CacheUtil;
 import com.dev.servlet.utils.CryptoUtils;
+import lombok.NoArgsConstructor;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Objects;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * The type User business.
  * <p>
  * This class is responsible for the user business logic.
  *
- * @see BaseRequest
+ * @see BaseBusiness
  */
+@NoArgsConstructor
 @Singleton
 @ResourcePath("user")
-public class UserBusiness extends BaseRequest {
-    public static final String FORWARD_PAGES_USER = "forward:pages/user/";
-    public static final String FORWARD_PAGE_CREATE = FORWARD_PAGES_USER + "formCreateUser.jsp";
+public class UserBusiness extends BaseBusiness<User, Long, UserDTO> {
 
-    private UserController controller;
-
-    public UserBusiness() {
-        // Empty constructor
-    }
+    public static final String LOGIN = "login";
+    public static final String PASSWORD = "password";
+    public static final String USER = "user";
+    public static final String TOKEN = "token";
 
     @Inject
-    public void setDependencies(UserController controller) {
-        this.controller = controller;
+    public UserBusiness(UserController controller) {
+        super(controller);
+        this.mapper = new UserMapper();
+    }
+
+    @Override
+    protected UserController getController() {
+        return (UserController) super.getController();
     }
 
     /**
      * Redirect to Edit user.
      *
-     * @param request
-     * @return the string
+     * @param request {@link Request}
+     * @return {@link Response}
      */
-//    @ResourceMapping(CREATE)
-    public String register(StandardRequest request) throws ServiceException, IOException {
+    @ResourceMapping("registerUser")
+    public Response register(Request request) throws ServiceException {
+        LOGGER.trace("");
 
-        var password = request.getParameter("password");
+        /// Both passwords are encrypted already
+        var password = request.getParameter(PASSWORD);
         var confirmPassword = request.getParameter("confirmPassword");
 
         if (password == null || !password.equals(confirmPassword)) {
-            request.setAttribute("email", request.getParameter("email"));
-            request.setAttribute("error", "password invalid");
-            request.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return FORWARD_PAGE_CREATE;
+            Response.Data data = Response.Data.of("error", "Passwords do not match.");
+            Response response = Response.of(data);
+            return response.next(super.forwardTo("formCreateUser"));
         }
 
+        String email = request.getRequiredParameter(LOGIN).toLowerCase();
         User user = new User();
-        String email = request.getRequiredParameter("email").toLowerCase();
         user.setLogin(email);
-        user = controller.find(user);
+        user = this.find(user);
 
         if (user != null) {
-            request.setAttribute("error", "User already exists");
-            request.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return FORWARD_PAGE_CREATE;
+            return Response.ofError(HttpServletResponse.SC_FORBIDDEN, "Login already in use.");
         }
 
-        user = new User(email, CryptoUtils.encrypt(password));
+        User userRegister = new User();
+        userRegister.setLogin(email);
+        userRegister.setPassword(password);  // already encrypted
+        userRegister.setImgUrl(request.getParameter("imgUrl"));
+        userRegister.setStatus(StatusEnum.ACTIVE.getValue());
+        userRegister.setPerfis(List.of(PerfilEnum.DEFAULT.getCode()));
 
-        user.addPerfil(PerfilEnum.DEFAULT.cod);
-        user.setStatus(StatusEnum.ACTIVE.value);
-        controller.save(user);
+        super.save(userRegister);
 
-        request.setAttribute("success", "success");
-        request.setStatus(HttpServletResponse.SC_CREATED);
-        return FORWARD_PAGES_FORM_LOGIN;
+        Response response = new Response(HttpServletResponse.SC_CREATED);
+        response.data("info", "Success");
+        return response.next(FORWARD_PAGES_FORM_LOGIN);
     }
 
     /**
      * Update user.
      *
-     * @param request
-     * @return the string
+     * @param request {@link Request}
+     * @return {@link Response}
      */
     @ResourceMapping(UPDATE)
-    public String update(StandardRequest request) throws ServiceException {
-        User userCache = getUserFromCache(request);
+    public Response update(Request request, String token) throws ServiceException {
+        LOGGER.trace("");
 
-        String email = request.getRequiredParameter("email").toLowerCase();
+        User userToken = getUser(token);
 
-        if (controller.isEmailAlreadyInUse(email, userCache.getId())) {
-            request.setAttribute("invalid", "Email '" + email + "' already in use");
-            request.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return FORWARD_PAGES_USER + "formListUser.jsp";
+        if (!userToken.getId().equals(Long.parseLong(request.getEntityId()))) {
+            return Response.ofError(HttpServletResponse.SC_FORBIDDEN, NOT_FOUND);
         }
 
-        User user = new User(userCache.getId());
+        String email = request.getRequiredParameter(LOGIN).toLowerCase();
+        if (this.getController().isEmailAlreadyInUse(email, userToken.getId())) {
+            String error = "Email already in use.";
+            return Response.ofError(HttpServletResponse.SC_FORBIDDEN, error);
+        }
+
+        User user = new User(userToken.getId());
+        user.setPerfis(userToken.getPerfis());
         user.setLogin(email.toLowerCase());
         user.setImgUrl(request.getParameter("imgUrl"));
-        user.setPassword(CryptoUtils.encrypt(request.getRequiredParameter("password")));
-        user.setPerfis(userCache.getPerfis());
-        user.setStatus(StatusEnum.ACTIVE.value);
-        user = controller.update(user);
+        user.setPassword(request.getRequiredParameter(PASSWORD));
+        user.setStatus(StatusEnum.ACTIVE.getValue());
+        user = super.update(user);
+
+        // TODO update JSON user config
 
         // the roles may have changed, so we need to clear the cache and generate a new token
-        CacheUtil.clearAll(request.getToken());
+        CacheUtil.clearAll(token);
 
         String jwtToken = CryptoUtils.generateJWTToken(user);
-        request.setSessionAttribute("token", jwtToken);
-        request.setSessionAttribute("user", UserMapper.from(user));
 
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        return "redirect:/view/user/list/<id>".replace("<id>", user.getId().toString());
+        UserDTO userDTO = super.fromEntity(user);
+        Response response = Response.of(
+                new Response.Data().add(TOKEN, jwtToken).add(USER, userDTO)
+        );
+
+        return response.next(redirectTo(userToken.getId()));
     }
 
     /**
      * List user by session.
      *
-     * @param standardRequest
-     * @return the string
+     * @param request {@link Request}
+     * @return {@link Response}
      */
     @ResourceMapping(LIST)
-    public String find(StandardRequest standardRequest) {
-        User user = getUser(standardRequest);
-        standardRequest.setAttribute("user", UserMapper.from(user));
-        return FORWARD_PAGES_USER + "formListUser.jsp";
+    public Response list(Request request, String token) {
+        LOGGER.trace("");
+
+        if (request.getEntityId() == null) {
+            return super.responseEntityNotFound(null);
+        }
+
+        User user = getUser(token);
+        if (!user.getId().equals(Long.parseLong(request.getEntityId()))) {
+            return Response.ofError(HttpServletResponse.SC_FORBIDDEN, NOT_FOUND);
+        }
+
+        user = super.findById(user.getId());
+
+        UserDTO userDTO = super.fromEntity(user);
+        Response response = Response.of(Response.Data.of("user", userDTO));
+
+        return response.next(super.forwardTo("formListUser"));
     }
 
     /**
      * Delete one
      *
-     * @param request
-     * @return
+     * @param request {@link Request}
+     * @return {@link Response}
      */
     @ResourceMapping(DELETE)
-    public String delete(StandardRequest request) throws ServiceException {
-        User cached = getUserFromCache(request);
-        controller.delete(cached);
-        CacheUtil.clearAll(request.getToken());
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        return FORWARD_PAGES_FORM_LOGIN;
+    public Response delete(Request request, String token) {
+        LOGGER.trace("");
+
+        User user = getUser(token);
+        if (!user.getId().equals(Long.parseLong(request.getEntityId()))) {
+            return Response.ofError(HttpServletResponse.SC_FORBIDDEN, NOT_FOUND);
+        }
+
+        super.delete(user);
+        CacheUtil.clearAll(token);
+
+        Response response = new Response(HttpServletResponse.SC_NO_CONTENT);
+        return response.next(super.forwardTo("formLogin"));
     }
 
     /**
-     * get user from cache
+     * Find user.
      *
-     * @param request
-     * @return the string
+     * @param user {@link Request}
+     * @return {@link Optional} of {@link User}
      */
-    private User getUserFromCache(StandardRequest request) throws ServiceException {
-        if (request.getId() == null) throwResourceNotFoundException(null);
-
-        User cached = getUser(request);
-
-        if (!Objects.equals(cached.getId(), request.getId())) {
-            throw new ServiceException(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-        }
-
-        return cached;
+    public Optional<User> findByLoginAndPassword(User user) {
+        user = super.find(user);
+        return Optional.ofNullable(user);
     }
-
 }

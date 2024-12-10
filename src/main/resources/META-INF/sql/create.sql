@@ -12,7 +12,7 @@ create table tb_inventory
     description varchar(255),
     quantity    int4,
     status      varchar(1),
-    product_id     int8,
+    product_id  int8,
     user_id     int8
 );
 
@@ -35,9 +35,10 @@ create table tb_user
 (
     id        int8,
     image_url TEXT,
-    login     varchar(255),
+    login     varchar(255) unique,
     password  varchar(255),
-    status    varchar(1)
+    status    varchar(1),
+    config    TEXT
 );
 
 create table tb_perfil
@@ -48,7 +49,7 @@ create table tb_perfil
 
 create table user_perfis
 (
-    user_id int8 not null,
+    user_id   int8 not null,
     perfil_id int8 not null
 );
 
@@ -127,8 +128,12 @@ alter table user_perfis
         foreign key (user_id)
             references tb_user;
 
--- Initial data
-insert into tb_perfil (id, name) values (1, 'ADMIN');
-insert into tb_perfil (id, name) values (2, 'USER');
-insert into tb_perfil (id, name) values (3, 'MANAGER');
-insert into tb_perfil (id, name) values (4, 'GUEST');
+-- Initial responseData
+insert into tb_perfil (id, name)
+values (1, 'ADMIN');
+insert into tb_perfil (id, name)
+values (2, 'USER');
+insert into tb_perfil (id, name)
+values (3, 'MANAGER');
+insert into tb_perfil (id, name)
+values (4, 'GUEST');

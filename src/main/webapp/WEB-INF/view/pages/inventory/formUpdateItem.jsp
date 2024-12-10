@@ -22,7 +22,7 @@
             <div class="mb-3">
                 <label for="inputDescription" class="form-label">DESCRIPTION</label>
                 <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="descripton" rows="4" required
+                          placeholder="descripton" rows="6" required
                           minlength="4" maxlength="1400">${ item.description }</textarea>
             </div>
 
@@ -32,12 +32,11 @@
                 </div>
             </c:if>
 
-            <!-- action -->
-
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listInventories }/${ item.id }" class="btn btn-light">
-                Cancel
-            </a>
+            <div class="align-end">
+                <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+                <span class="mr-2"></span>
+                <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
+            </div>
         </div>
     </form>
 </div>

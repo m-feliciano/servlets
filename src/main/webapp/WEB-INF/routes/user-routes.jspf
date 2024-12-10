@@ -1,0 +1,8 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<c:set value="view/user" var="userLink"/>
+<c:url value="/${userLink}/edit" var="editUser"/>
+<c:url value="/${userLink}/registerUser" var="registerUser"/>
+
+<c:url value="/${userLink}/update" var="updateUser"/>
+<c:url value="/${userLink}/" var="listUser"/>

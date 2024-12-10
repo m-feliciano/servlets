@@ -1,57 +1,42 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/user-routes.jspf" %>
+<%@ include file="/WEB-INF/routes/auth-routes.jspf" %>
 
 <!DOCTYPE html>
 <html lang="en">
-<%@ include file="/WEB-INF/jspf/head-loginForm.jspf" %> <!-- This is a fragment -->
+<%@ include file="/WEB-INF/fragments/head-loginform.jspf" %>
 <body>
-<div class="register sidenav">
-    <div class="register-main-text">
-        <h2>
-            Servlet<br> Register Page
-        </h2>
-        <p>Register from here to access.</p>
-    </div>
-</div>
-<div class="main">
-    <div class="col-md-6 col-sm-12">
-        <div class="login-form">
-            <form action="${registerUser}" method="post">
-                <div class="form-group">
-                    <label for="inputEmail">Email</label> <input type="email"
-                                                                 value="${ email }" id="inputEmail" name="email"
-                                                                 class="form-control hidden-alert" placeholder="Email"
-                                                                 required>
-                </div>
-                <div class="form-group">
-                    <label for="inputPassword">Password</label> <input type="password"
-                                                                       id="inputPassword" name="password"
-                                                                       class="form-control hidden-alert"
-                                                                       placeholder="Password"
-                                                                       required
-                <%--                                                                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"--%>
-                                                                       minlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="inputConfirmPassword">Confirm password</label> <input
-                        type="password" id="inputConfirmPassword" name="confirmPassword"
-                        class="form-control hidden-alert" placeholder="Confirm"
-                        required
-                <%--                                                                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"--%>
-                        minlength="6">
-                </div>
-                <c:if test="${not empty error}">
-                    <div class="alert alert-danger hidden-alert" role="alert">
-                        <c:out value="${error}"/>
-                    </div>
-                </c:if>
-                <div>
-                    <a type="button" href="${ loginPage }" class="btn btn-black">Login</a>
-                    <span class="ml-1"></span>
-                    <button type="submit" class="btn btn-blue">Register</button>
-                </div>
-            </form>
+<div class="login-container">
+    <h2 class="text-center">Sign up</h2>
+    <form action="${registerUser}" method="post">
+        <div class="mb-3">
+            <label for="inputLogin" class="form-label">Email</label>
+            <input type="email" id="inputLogin" name="login" value="${email}" class="form-control" placeholder="Email"
+                   required>
         </div>
-    </div>
+        <div class="mb-3">
+            <label for="inputPassword" class="form-label">Password</label>
+            <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password"
+                   required minlength="6">
+        </div>
+        <div class="mb-3">
+            <label for="inputConfirmPassword" class="form-label">Confirm password</label>
+            <input type="password" id="inputConfirmPassword" name="confirmPassword" class="form-control"
+                   placeholder="Confirm" required
+            <%--                                                                       pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"--%>
+                   minlength="6">
+        </div>
+        <c:if test="${not empty error or not empty info}">
+            <div class="alert ${not empty error ? 'alert-danger' : 'alert-success'}" role="alert">
+                <c:out value="${error != null ? error : info}"/>
+            </div>
+        </c:if>
+        <div class="d-grid text-center">
+            <button type="submit" class="btn btn-primary">Sign up</button>
+        </div>
+        <div class="mt-3 text-center">
+            <button type="button" class="btn btn-link" onclick="window.location.href='${loginPage}'">Login</button>
+        </div>
+    </form>
 </div>
 </body>
 </html>

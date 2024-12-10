@@ -16,6 +16,22 @@
 
     <!-- filter chain order -->
     <filter>
+        <filter-name>PasswordEncryptionFilter</filter-name>
+        <filter-class>com.dev.servlet.filter.PasswordEncryptFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>PasswordEncryptionFilter</filter-name>
+        <url-pattern>/view/*</url-pattern>
+    </filter-mapping>
+    <filter>
+        <filter-name>XSSFilter</filter-name>
+        <filter-class>com.dev.servlet.filter.XSSFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>XSSFilter</filter-name>
+        <url-pattern>/view/*</url-pattern>
+    </filter-mapping>
+    <filter>
         <filter-name>AFUSER</filter-name>
         <filter-class>com.dev.servlet.filter.Auth</filter-class>
     </filter>

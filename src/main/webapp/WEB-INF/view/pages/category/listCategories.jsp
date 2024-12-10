@@ -1,5 +1,12 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/category-routes.jspf" %>
+<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
+
+<%
+    request.setAttribute("categories", ((IHttpResponse<?>) request.getAttribute("response")).getResponse());
+%>
+
+<title>Categories</title>
 
 <div class="main">
     <c:if test="${ empty categories }">
@@ -22,23 +29,32 @@
                     </thead>
                     <tbody>
                     <c:forEach items="${ categories }" var="category">
+                        <input type="hidden" name="id" id="id${ category.id }" value="${ category.id }">
                         <tr>
                             <th width="10%" scope="row">${ category.id }</th>
                             <td width=50%>${ category.name }</td>
                             <td width=25%>
-                                <a type="button" href="${ listCategories }/${ category.id }" class="btn btn-primary">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a type="button" href="${ deleteCategory }/${ category.id }" class="btn btn-danger">
-                                    <i class="bi bi-trash3"></i>
-                                </a>
+                                <form action="${ listCategory }" method="get" class="d-inline">
+                                    <input type="hidden" name="id" value="${ category.id }">
+                                    <button type="submit" class="btn btn-auto btn-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </form>
+                                <form action="${ deleteCategory }/${ category.id }" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-auto btn-danger"
+                                            onclick="return confirm('Are you sure?')">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     </c:forEach>
                     </tbody>
                 </table>
                 <div class="d-flex flex-row-reverse mb20">
-                    <a type="button" href="${ newCategory }" class="btn btn-success">New</a>
+                    <a type="button" href="${ newCategory }" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> New
+                    </a>
                 </div>
             </div>
         </div>

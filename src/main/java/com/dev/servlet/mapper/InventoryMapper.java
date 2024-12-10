@@ -1,41 +1,47 @@
 package com.dev.servlet.mapper;
 
-import com.dev.servlet.dto.InventoryDto;
+import com.dev.servlet.dto.InventoryDTO;
 import com.dev.servlet.pojo.Inventory;
 
 public final class InventoryMapper {
+
     private InventoryMapper() {
+        throw new IllegalStateException("InventoryMapper class");
     }
 
-
     /**
-     * {@link Inventory} from {@link InventoryDto}
+     * {@link Inventory} from {@link InventoryDTO}
      *
-     * @param dto
+     * @param dto {@link InventoryDTO}
      * @return {@link Inventory}
      */
-    public static Inventory from(InventoryDto dto) {
-        Inventory inventory = new Inventory(dto.getId());
+    public static Inventory full(InventoryDTO dto) {
+        Inventory inventory = new Inventory();
+        inventory.setId(dto.getId());
         inventory.setQuantity(dto.getQuantity());
         inventory.setStatus(dto.getStatus());
-        inventory.setProduct(ProductMapper.from(dto.getProduct()));
-        inventory.setUser(UserMapper.from(dto.getUser()));
+        inventory.setDescription(dto.getDescription());
+        inventory.setProduct(ProductMapper.full(dto.getProduct()));
+        inventory.setUser(UserMapper.full(dto.getUser()));
         return inventory;
     }
 
     /**
-     * {@link InventoryDto} from {@link Inventory}
+     * {@link InventoryDTO} from {@link Inventory}
      *
-     * @param inventory
-     * @return {@link InventoryDto}
+     * @param inventory {@link Inventory}
+     * @return {@link InventoryDTO}
      */
-    public static InventoryDto from(Inventory inventory) {
-        InventoryDto dto = new InventoryDto(inventory.getId());
-        dto.setQuantity(inventory.getQuantity());
-        dto.setStatus(inventory.getStatus());
-        dto.setDescription(inventory.getDescription());
-        dto.setProduct(ProductMapper.from(inventory.getProduct()));
-        dto.setUser(UserMapper.onlyId(inventory.getUser()));
-        return dto;
+    public static InventoryDTO full(Inventory inventory) {
+        if (inventory == null) return null;
+
+        return InventoryDTO.builder()
+                .id(inventory.getId())
+                .quantity(inventory.getQuantity())
+                .status(inventory.getStatus())
+                .description(inventory.getDescription())
+                .product(ProductMapper.base(inventory.getProduct()))
+                .user(UserMapper.onlyId(inventory.getUser()))
+                .build();
     }
 }

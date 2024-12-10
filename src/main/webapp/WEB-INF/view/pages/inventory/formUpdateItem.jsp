@@ -1,29 +1,34 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
+<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
+<%
+    request.setAttribute("inventory", ((IHttpResponse<?>) request.getAttribute("response")).getResponse());
+%>
+
 <div class="main">
-    <form action="${ updateItem }/${item.id}" method="post">
+    <form action="${ updateItem }/${inventory.id}" method="post">
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="inputItemId" class="form-label">ID</label>
                 <input type="number" name="id" class="form-control" id="inputItemId"
-                       placeholder="ID" value="${ item.id }" readonly="readonly" required minlength="1"/>
+                       placeholder="ID" value="${ inventory.id }" readonly="readonly" required minlength="1"/>
             </div>
             <div class="mb-3">
                 <label for="inputProductId" class="form-label">PRODUCT ID</label>
                 <input type="number" name="productId" class="form-control" id="inputProductId"
-                       placeholder="ID" value="${ item.getProduct().getId() }" required minlength="1"/>
+                       placeholder="ID" value="${ inventory.getProduct().getId() }" required minlength="1"/>
             </div>
             <div class="mb-3">
                 <label for="inputQuantity" class="form-label">QUANTITY</label>
                 <input type="number" name="quantity" class="form-control" id="inputQuantity"
-                       placeholder="quantity" value="${ item.quantity }" required minlength="1"/>
+                       placeholder="quantity" value="${ inventory.quantity }" required minlength="1"/>
             </div>
             <div class="mb-3">
                 <label for="inputDescription" class="form-label">DESCRIPTION</label>
                 <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="descripton" rows="4" required
-                          minlength="4" maxlength="1400">${ item.description }</textarea>
+                          placeholder="descripton" rows="6" required
+                          minlength="4" maxlength="1400">${ inventory.description }</textarea>
             </div>
 
             <c:if test="${not empty error}">
@@ -32,12 +37,11 @@
                 </div>
             </c:if>
 
-            <!-- action -->
-
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listInventories }/${ item.id }" class="btn btn-light">
-                Cancel
-            </a>
+            <div class="align-end">
+                <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+                <span class="mr-2"></span>
+                <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
+            </div>
         </div>
     </form>
 </div>

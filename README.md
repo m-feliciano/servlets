@@ -1,98 +1,163 @@
-# Product Management Application
+# Full-Stack Java Web Application
 
-This project is a full Java/JSP web application designed for managing products. It follows the Model-View-Controller (MVC) architecture, ensuring a clear separation of concerns and facilitating maintainability and scalability.
+This project is a comprehensive Java/JSP web application.
+It follows the Model-View-Controller (MVC) architecture and uses the Java EE stack.
+I've used the latest Java features and best practices to build this application.
 
 ## Table of Contents
-- [Technology Stack](#technology-stack)
+
+- [Technology Stack](#tech-stack)
 - [URL Design](#url-design)
-- [Layout](#layout)
+- [Layout](#Some-layouts)
 - [Packages](#packages)
 - [Setup Instructions](#setup-instructions)
-- [Usage Instructions](#usage-instructions)
-- [Features in Progress](#features-in-progress)
+- [Notes](#notes)
 
-## Technology Stack
-- **Java (JDK 17)**: The core programming language.
-- **Hibernate (ORM)**: An Object-Relational Mapping framework that simplifies database interactions.
-- **Tomcat 9 (Server)**: A web server and servlet container used to deploy and run the application.
-- **PostgreSQL (Database)**: An open-source relational database management system.
-- **Criteria API**: A type-safe way to build queries for the database decoupling the queries from the underlying database.
+## Tech Stack
+
+- **Java (JDK 17)**: Core programming language.
+- **Hibernate (ORM)**: Simplifies database interactions.
+- **Tomcat 9 (Server)**: Web server and servlet container.
+- **PostgreSQL (Database)**: Open-source relational database management system.
+- **Criteria API**: Type-safe way to build database queries.
 
 ## URL Design
-- `{context}/view/{service}/{action}/{id|query}`
 
-Example:
-- `server/view/product/list/1`
+The URL structure is designed to be RESTful and easy to understand.
 
-## Layout
+- `{context}/view/{path}/{service}/?{query}`
 
-### Login
-#### `/login/form`
-![App login page](https://i.ibb.co/R0xM6Ps/Screenshot-2022-07-17-034301.png)
+The URL structure is as follows:
+
+- `{context}`: The application context path e.g., `https://your-domain.com/view/`.
+- `{path}`: The controller path.
+- `{service}`: The service to be performed.
+- `{query}`: The query parameters if needed.
+
+Example GET:
+
+- `server/view/product/` - List all products
+- `server/view/product/?id=1` - Get product by ID
+
+Example POST:
+
+- `server/view/product/update` - Update product
+
+Example of controller:
+
+```java
+
+@Controller(path = "/product")
+public final class ProductController extends BaseController<Product, Long> {
+
+    // POST /product/create
+    @RequestMapping(value = CREATE, method = "POST")
+    public IHttpResponse<Void> create(Request request) {
+        ProductDTO product = this.getModel().create(request);ó
+        // Created
+       return super.buildHttpResponse(201, null, super.redirectTo(product.getId()));
+    }
+
+    // GET /product/{id}
+    @RequestMapping(value = "/{id}", method = "GET")
+    public IHttpResponse<ProductDTO> listById(Request request) throws ServiceException {
+        ProductDTO product = this.getModel().getById(request);
+        // OK
+        return super.buildHttpResponse(200, product, super.forwardTo("formListProduct"));
+    }
+
+   /**
+    * Build the HTTP response.
+    *
+    * @param response
+    * @param nextPath
+    * @param <U>     the response type
+    */
+   // Superclass method
+   protected <U> IHttpResponse<U> buildHttpResponse(int status, U response, String nextPath) {
+      return HttpResponse.<U>builder()
+              .status(status)
+              .response(response)
+              .next(nextPath)
+              .build();
+   }
+}
+```
+
+## Some layouts
 
 ### Home Page
-#### `/product/list?<query>`
-![App home page](https://i.ibb.co/fFT7p2N/shopping-prod.png)
+
+#### `/product/?page=1&limit=3&sort=id&order=asc`
+
+![App home page](./images/homepage.png)
 
 #### Tips:
+
 - *Sorting*: `sort=<field>&order=<asc|desc>&page=<page>&limit=<size>`
 - *Searching*: `q=<query>&k=<field>`
 
 Sample URLs:
-- `/product/list?page=1&limit=5&sort=id&order=desc`
-- `/product/list?q=macbook+pro&k=name`
+
+- `/product/?page=1&limit=5&sort=id&order=desc`
+- `/product/?q=macbook+pro&k=name`
 
 Default values can be changed in the `app.properties` file.
 
 ### Product
-#### `/product/list/<id>`
-![App product list page](https://i.ibb.co/1fy8JtG/Screenshot.png)
 
-### User
-#### `/user/list/<id>`
-![App user list page](https://i.ibb.co/nBbGMtG/temp.png)
+#### `/product/?id={id}`
 
-### Error page (in progress)
-#### `/product/list/<invalid_id>`
-![App not found page](https://i.postimg.cc/Sx8D8GZP/Screenshot-2024-08-10-174059.png)
+![App product list page](./images/product-list.png)
+
+### Info Page
+
+[comment]: <> (Found on the web, author unknown)
+![Error](./images/cat_404.gif)
 
 ## Packages
+
 ```
+C:.
 ├───main
 │   ├───java
 │   │   └───com
 │   │       └───dev
 │   │           └───servlet
-│   │               ├───builders
-│   │               ├───business        (services)
-│   │               │   └───base 
-│   │               ├───controllers
-│   │               ├───dao             (infra)
-│   │               ├───dto             (data transfer objects)
-│   │               ├───filter          (servlet filters)
-│   │               ├───interfaces      (contracts)
-│   │               ├───listeners 
-│   │               ├───mapper          (object mapping/transfers)
-│   │               ├───pojo            (plain old java objects)
+│   │               ├───builders 
+│   │               ├───controllers    (REST controllers)
+│   │               ├───dao            (Data Access Object)
+│   │               ├───dto            (Data Transfer Object)
+│   │               ├───filter         (Servlet filters)
+│   │               │   └───wrappers   (Request wrappers)
+│   │               ├───interfaces     (Contracts)
+│   │               ├───listeners      (Servlet listeners)
+│   │               ├───mapper         (Object mapper)
+│   │               ├───model          (Service classes)
+│   │               │   └───shared
+│   │               ├───pojo           (Plain Old Java Object)
 │   │               │   ├───enums
-│   │               │   └───records     (Immutable objects)
-│   │               ├───providers       (dependency injection, sevice locator etc.)
-│   │               ├───transform
-│   │               └───utils
+│   │               │   └───records    (Immutable classes)
+│   │               ├───providers      (Service providers)
+│   │               └───utils          (Utility classes)
 │   ├───resources
 │   │   └───META-INF
-│   │       └───sql                     (database scripts, default data, etc.)
+│   │       └───sql                 (Database scripts)
 │   └───webapp
-│       ├───assets                      (images, fonts, etc.)
-│       ├───css                         (stylesheets)
+│       ├───assets
+│       │   └───images
+│       ├───css                    (CSS styles)
+│       ├───js
 │       ├───META-INF
 │       ├───web
 │       │   └───WEB-INF
 │       └───WEB-INF
-│           ├───jspf                    (JSP fragments)
-│           └───view                    
-│               ├───components          (JSP components like header, footer, etc.)
-│               └───pages               (JSP pages)
+│           ├───fragments          (Reusable JSP fragments)
+│           ├───routes             (URL mappings)
+│           └───view               (JSP views)
+│               ├───components     (Reusable JSP components)
+│               │   └───buttons
+│               └───pages          (JSP pages)
 │                   ├───category
 │                   ├───inventory
 │                   ├───product
@@ -100,11 +165,12 @@ Default values can be changed in the `app.properties` file.
 └───test
     └───java
         └───servlets
-            └───utils
+            └───auth
 
 ```
 
 ## Setup Instructions
+
 1. Clone the repository:
     ```sh
     git clone https://github.com/m-feliciano/servlets.git
@@ -138,20 +204,26 @@ Default values can be changed in the `app.properties` file.
     # The database connection is set in the `resources/META-INF/persistence.xml` file.
     ```
 
-5. Deploy the application to Tomcat:
+5. Setting up the database:
+    - Run the scripts in the `resources/META-INF/sql` folder to create the tables and insert initial data.
+    - Update the `persistence.xml` file with your database credentials.
+    - Update the `app.properties` file as needed.
+      <br><br>
+6. Deploy the application to Tomcat:
     - Install Tomcat 9 on your machine.
     - Copy the generated WAR file to the Tomcat `webapps` directory.
     - Start the Tomcat server.
+      <br><br>
+7. Usage Instructions
+    - Access the application at `<server>/view/<context-path>` (e.g., `http://localhost:8080/view/login/form`).
 
-## Usage Instructions
-- Access the application at `http://localhost:8080/<context-path>`
-- Use the provided URLs to navigate through the application.
+## Notes
 
-## Features in Progress
-- [x] Implement pagination
-- [x] Export/Import data to CSV
-- [ ] Decouple backend from frontend
-- [ ] Dockerize the application
-- [ ] Jasper Reports
+***Note***: This project was initially created years ago to learn Java EE, core Servlet/JSP, and JPA. It has been
+updated to incorporate the latest Java features and best practices.
 
-[Back to top](#product-management-application)
+There is a lot of room for improvement,
+like refactoring the frontend joining the files into a single one using `JSP fragments`,
+and `JSTL` to render the content dynamically.
+
+[Back to top](#full-stack-java-web-application)

@@ -1,4 +1,4 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <div class="main">
@@ -19,10 +19,10 @@
                 <input type="text" name="description" class="form-control" id="inputDescription"
                        placeholder="simple descripton" required minlength="4"/>
             </div>
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listInventories }" class="btn btn-light">
-                Cancel
-            </a>
+
+            <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+            <span class="mr-2"></span>
+            <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
         </div>
     </form>
 </div>

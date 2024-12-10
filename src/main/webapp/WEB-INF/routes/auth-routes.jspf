@@ -1,0 +1,7 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<c:set value="view/login" var="loginLink"/>
+<c:url value="/${loginLink}/form" var="loginPage"/>
+<c:url value="/${loginLink}/login" var="login"/>
+<c:url value="/${loginLink}/logout" var="logout"/>
+<c:url value="/${loginLink}/registerPage" var="registerPage"/>

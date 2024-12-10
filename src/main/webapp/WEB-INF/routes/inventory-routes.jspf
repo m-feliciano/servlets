@@ -1,0 +1,10 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<c:set value="view/inventory" var="inventoryLink"/>
+<c:url value="/${inventoryLink}/new" var="newItem"/>
+<c:url value="/${inventoryLink}/edit" var="editItem"/>
+
+<c:url value="/${inventoryLink}/create" var="createItem"/>
+<c:url value="/${inventoryLink}/update" var="updateItem"/>
+<c:url value="/${inventoryLink}/delete" var="deleteItem"/>
+<c:url value="/${inventoryLink}/" var="listInventory"/>

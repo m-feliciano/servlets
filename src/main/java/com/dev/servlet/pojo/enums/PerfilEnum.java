@@ -1,34 +1,35 @@
 package com.dev.servlet.pojo.enums;
 
-public enum PerfilEnum {
+import lombok.Getter;
 
+@Getter
+public enum PerfilEnum {
     ADMIN(1L, "ADMIN"),
     DEFAULT(2L, "USER"),
     MODERATOR(3L, "MODERATOR"),
     VISITOR(4L, "GUEST");
 
-    public final Long cod;
-    public final String description;
+    private final Long code;
+    private final String description;
 
-    PerfilEnum(Long cod, String descricao) {
-        this.cod = cod;
+    PerfilEnum(Long code, String descricao) {
+        this.code = code;
         this.description = descricao;
     }
 
     /**
-     * Gets cod.
+     * Gets code.
      *
      * @return the enum value
      */
-    public static PerfilEnum toEnum(Long cod) {
-        if (cod == null) {
-            return null;
-        }
+    public static PerfilEnum toEnum(Long code) {
+        if (code == null) return null;
 
         for (PerfilEnum p : PerfilEnum.values()) {
-            if (cod.equals(p.cod))
+            if (code.equals(p.code))
                 return p;
         }
-        throw new IllegalArgumentException("Invalid Id: " + cod);
+
+        throw new IllegalArgumentException("Invalid Id: " + code);
     }
 }

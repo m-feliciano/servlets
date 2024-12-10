@@ -1,5 +1,10 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/product-routes.jspf" %>
+<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
+
+<%
+    request.setAttribute("categories", ((IHttpResponse<?>) request.getAttribute("response")).getResponse());
+%>
 
 <div class="main">
     <form action="${ createProduct }" method="post">
@@ -39,10 +44,10 @@
                 <label for="inputURL" class="form-label">IMAGE</label>
                 <textarea name="url" class="form-control" id="inputURL" placeholder="URL"></textarea>
             </div>
-            <!-- action -->
 
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listProducts }" class="btn btn-light">Cancel</a>
+            <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+            <span class="mr-2"></span>
+            <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
         </div>
     </form>
 </div>

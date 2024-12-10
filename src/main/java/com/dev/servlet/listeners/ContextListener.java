@@ -1,7 +1,6 @@
 package com.dev.servlet.listeners;
 
-import com.dev.servlet.providers.ServiceLocator;
-import com.dev.servlet.utils.JPAUtil;
+import com.dev.servlet.utils.BeanUtil;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -18,22 +17,21 @@ public class ContextListener implements ServletContextListener {
     /**
      * This method is called when the servlet context is destroyed
      *
-     * @param arg0
+     * @param arg0 {@link ServletContextEvent}
      */
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
-        // Add the code to destroy the servlet context
-        JPAUtil.closeEntityManagerFactory();
+        // Empty method
     }
 
     /**
      * This method is called when the servlet context is initialized
      *
-     * @param arg0
+     * @param arg0 {@link ServletContextEvent}
      */
     @Override
-    @SuppressWarnings("unchecked")
     public void contextInitialized(ServletContextEvent arg0) {
-        ServiceLocator.getInstance().resolveAll();
+        BeanUtil.DependencyResolver resolver = BeanUtil.getResolver();
+        resolver.resolveAll();
     }
 }

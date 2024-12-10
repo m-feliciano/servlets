@@ -1,5 +1,11 @@
-<%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
+<%@ include file="/WEB-INF/routes/category-routes.jspf" %>
+<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
+
+<%
+    request.setAttribute("category", ((IHttpResponse<?>) request.getAttribute("response")).getResponse());
+%>
+
 
 <div class="main">
     <form action="${ updateCategory }/${category.id}" method="post">
@@ -16,12 +22,11 @@
                        placeholder="name" value="${ category.name }" autocomplete="name" required minlength="4"/>
             </div>
 
-            <!-- action -->
-
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listCategories }/${category.id }" class="btn btn-light">
-                Cancel
-            </a>
+            <div class="align-end">
+                <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+                <span class="mr-2"></span>
+                <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
+            </div>
         </div>
     </form>
 </div>

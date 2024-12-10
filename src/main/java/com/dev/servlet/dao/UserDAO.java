@@ -3,9 +3,12 @@ package com.dev.servlet.dao;
 import com.dev.servlet.pojo.User;
 import com.dev.servlet.pojo.enums.StatusEnum;
 import com.dev.servlet.utils.CollectionUtils;
+import lombok.NoArgsConstructor;
+import org.hibernate.Session;
 
-import javax.enterprise.inject.Model;
+import javax.enterprise.context.RequestScoped;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
@@ -14,87 +17,53 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
 
-@Model
+@NoArgsConstructor
+@RequestScoped
 public class UserDAO extends BaseDAO<User, Long> {
 
-    public UserDAO() {
-        super(User.class);
-    }
+    public static final String LOGIN = "login";
 
-    /**
-     * Find all
-     *
-     * @param user
-     * @return {@link List}
-     */
+    @Override
     public List<User> findAll(User user) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<User> cq = cb.createQuery(User.class).distinct(true);
         Root<User> root = cq.from(User.class);
-        Predicate predicate = cb.notEqual(root.get("status"), StatusEnum.DELETED.value);
-        predicate = cb.and(predicate, cb.equal(root.get("login"), user.getLogin()));
+        Predicate predicate = cb.notEqual(root.get(STATUS), StatusEnum.DELETED.getValue());
+        predicate = cb.and(predicate, cb.equal(root.get(LOGIN), user.getLogin()));
 
         if (user.getPassword() != null) {
             predicate = cb.and(predicate, cb.equal(root.get("password"), user.getPassword()));
         }
 
-        Order descId = cb.desc(root.get("id"));
+        Order descId = cb.asc(root.get(ID));
         cq.select(root).where(predicate).orderBy(descId);
 
-        List<User> resultList = em.createQuery(cq).getResultList();
-        return resultList;
+        TypedQuery<User> query = em.createQuery(cq);
+        return query.getResultList();
     }
 
-    /**
-     * Find one
-     *
-     * @param user
-     * @return {@link User}
-     */
+    @Override
     public User find(User user) {
         List<User> all = findAll(user);
-        if (CollectionUtils.isNullOrEmpty(all)) {
+        if (CollectionUtils.isEmpty(all)) {
             return null;
         }
         return all.get(0);
     }
 
-    /**
-     * Delete one
-     *
-     * @param user
-     */
+    @Override
     public void delete(User user) {
-        beginTransaction();
+        Session session = getNewOpenSession();
+
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaUpdate<User> cu = builder.createCriteriaUpdate(User.class);
         Root<User> root = cu.from(User.class);
-        cu.set("status", StatusEnum.DELETED.value);
-        Predicate predicate = builder.equal(root.get("id"), user.getId());
+        cu.set(STATUS, StatusEnum.DELETED.getValue());
+        Predicate predicate = builder.equal(root.get(ID), user.getId());
         cu.where(predicate);
         Query query = em.createQuery(cu);
         query.executeUpdate();
-        commitTransaction();
-    }
 
-    /**
-     * Check if email is already in use
-     *
-     * @param email
-     * @param id
-     * @return boolean
-     */
-    public boolean isEmailAlreadyInUse(String email, Long id) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
-        Root<User> root = cq.from(User.class);
-        Predicate predicate = cb.equal(root.get("login"), email);
-
-        predicate = cb.and(predicate, cb.notEqual(root.get("status"), StatusEnum.DELETED.value));
-        predicate = cb.and(predicate, cb.notEqual(root.get("id"), id));
-
-        cq.select(cb.count(root)).where(predicate);
-        Long count = em.createQuery(cq).getSingleResult();
-        return count > 0;
+        session.getTransaction().commit();
     }
 }

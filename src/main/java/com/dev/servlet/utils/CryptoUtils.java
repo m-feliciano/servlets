@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.pojo.User;
 
 import javax.crypto.Cipher;
@@ -87,23 +88,23 @@ public final class CryptoUtils {
      * @param user
      * @return
      */
-    public static String generateJWTToken(User user) {
+    public static String generateJWTToken(UserDTO user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(getJWTSecretKey());
 
             int sevenDays = 7 * 24 * 60 * 60 * 1000;
 
-            String jwtToken = JWT.create()
+            long currentTimeMillis = System.currentTimeMillis();
+            return JWT.create()
                     .withIssuer("Servlet")
-                    .withSubject("User Authentication")
+                    .withSubject("Authentication")
                     .withClaim("userId", user.getId())
                     .withArrayClaim("roles", user.getPerfis().toArray(new Long[0]))
                     .withIssuedAt(new Date())
-                    .withExpiresAt(new Date(System.currentTimeMillis() + sevenDays))
+                    .withExpiresAt(new Date(currentTimeMillis + sevenDays))
                     .withJWTId(UUID.randomUUID().toString())
-//                    .withNotBefore(new Date(System.currentTimeMillis() + 1000L))
+//                    .withNotBefore(new Date(currentTimeMillis + 1000L))
                     .sign(algorithm);
-            return jwtToken;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -133,6 +134,7 @@ public final class CryptoUtils {
      * Get the user from a token
      *
      * @param token
+     * @return {@link User}
      */
     public static User getUser(String token) {
         DecodedJWT decodedJWT = JWT.decode(token);

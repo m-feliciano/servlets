@@ -33,18 +33,64 @@ textarea {
 }
 
 html {
-    background: #f3f3f3;
+    background: #f0f8ff;
+    font-size: small;
+}
+
+html::-webkit-scrollbar {
+    display: none;
 }
 
 body {
-    max-width: 1440px;
-    margin: 0 auto;
-    height: 100%;
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    height: 100% !important;
 }
 
+/* Custom styles for the navbar */
 .navbar {
+    background-color: #343a40; /* Dark background color */
     padding: 1rem;
-    font-family: 'Playfair Display SC', serif;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.navbar-brand img {
+    margin-right: 10px;
+}
+
+.navbar-nav .nav-item .nav-link {
+    color: #ffffff;
+    margin-right: 15px;
+    font-size: 1.1rem;
+}
+
+.navbar-nav .nav-item .nav-link:hover {
+    color: #f8fcff; /* Lighter blue on hover */
+}
+
+.avatar {
+    display: flex;
+    align-items: center;
+}
+
+.avatar .avatar-img {
+    border: 2px solid #ffffff;
+    margin-right: 10px;
+}
+
+.btn-logout {
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
 }
 
 .nav-items::before {
@@ -66,7 +112,7 @@ body {
 }
 
 .content {
-    min-height: calc(100vh - 75px);
+    min-height: calc(100vh - 50px);
     position: relative;
 }
 
@@ -78,8 +124,23 @@ body {
     margin-bottom: 1rem;
 }
 
+.nohover {
+    pointer-events: none;
+}
+
+.nohover:hover {
+    cursor: default;
+    background: #fff;
+}
+
+.mt30 {
+    margin-top: 30px;
+}
+
 .main {
-    padding: 3rem 2rem;
+    padding: 3rem 2rem 5rem;
+    max-width: 90%;
+    margin: 40px auto 0;
 }
 
 #footer {
@@ -144,14 +205,13 @@ body {
 }
 
 .img-square-min {
-    width: 80px !important;
-    height: 80px !important;
+    width: 75px !important;
+    height: 75px !important;
 }
 
-.fit-img {
-    object-fit: scale-down !important;
-    border: 1px solid #e0e0e0 !important;
-    box-shadow: 0 4px 4px -2px #989898 !important;
+.btn-black {
+    background-color: #343a40;
+    color: #fff;
 }
 
 .w-5 {
@@ -224,10 +284,37 @@ body {
     justify-content: center;
 }
 
+.align-end {
+    text-align: end;
+}
+
 .mb20 {
     margin-bottom: 20px;
 }
 
 .fit-content {
     height: fit-content;
+}
+
+.btn {
+    width: 100px !important;
+}
+
+.btn-auto {
+    width: auto !important;
+}
+
+caption {
+    caption-side: bottom !important;
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    text-align: start !important;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.mt20 {
+    margin-top: 20px;
 }

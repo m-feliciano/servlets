@@ -1,4 +1,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="ISO-8859-1" %>
+
+<fmt:setLocale value="pt-BR" scope="session"/>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -19,8 +23,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link rel="stylesheet" href="<c:url value='/css/styles.css'/>">
-    <link rel="stylesheet" href="<c:url value='/css/popup.css'/>">
-    <title>Shopping</title>
+    <title></title>
 </head>
 <body>
 

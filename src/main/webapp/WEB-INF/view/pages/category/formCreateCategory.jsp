@@ -9,12 +9,10 @@
                 <input type="text" name="name" class="form-control" id="inputName" placeholder="name" required
                        minlength="4"/>
             </div>
-            <!-- action -->
 
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a type="button" href="${ listCategories }" class="btn btn-light">
-                Cancel
-            </a>
+            <jsp:include page="/WEB-INF/view/components/buttons/backButton.jsp"/>
+            <span class="mr-2"></span>
+            <jsp:include page="/WEB-INF/view/components/buttons/saveButton.jsp"/>
         </div>
     </form>
 </div>

@@ -1,45 +1,36 @@
 package com.dev.servlet.mapper;
 
-import com.dev.servlet.dto.CategoryDto;
+import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.pojo.Category;
+import lombok.NoArgsConstructor;
 
-public final class CategoryMapper {
-    private CategoryMapper() {
-    }
+@NoArgsConstructor
+public final class CategoryMapper extends BaseMapper<Category, CategoryDTO> {
 
     /**
-     * {@link CategoryDto} from {@link Category}
+     * {@link CategoryDTO} from {@link Category}
      *
-     * @param category
-     * @return {@link CategoryDto}
+     * @param category {@link Category}
+     * @return {@link CategoryDTO}
      */
-    public static CategoryDto from(Category category) {
+    public static CategoryDTO from(Category category) {
         if (category == null) return null;
-        CategoryDto dto = new CategoryDto(category.getId());
-        dto.setName(category.getName());
-        dto.setUser(UserMapper.from(category.getUser()));
-        dto.setStatus(category.getStatus());
-        if (category.getProducts() != null) {
-            dto.setProducts(category.getProducts().stream().map(ProductMapper::from).toList());
-        }
 
-        return dto;
-    }
-
-    public static CategoryDto onlyId(Category category) {
-        if (category == null) return null;
-        CategoryDto categoryDto = new CategoryDto(category.getId());
-        categoryDto.setName(category.getName());
-        return categoryDto;
+        return CategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .status(category.getStatus())
+                .user(UserMapper.onlyId(category.getUser()))
+                .build();
     }
 
     /**
-     * {@link Category} from {@link CategoryDto}
+     * {@link Category} from {@link CategoryDTO}
      *
-     * @param dto
+     * @param dto {@link CategoryDTO}
      * @return {@link Category}
      */
-    public static Category from(CategoryDto dto) {
+    public static Category from(CategoryDTO dto) {
         if (dto == null) return null;
         Category category = new Category(dto.getId());
         category.setName(dto.getName());
@@ -49,5 +40,21 @@ public final class CategoryMapper {
             category.setProducts(dto.getProducts().stream().map(ProductMapper::from).toList());
         }
         return category;
+    }
+
+    public static CategoryDTO onlyId(Category category) {
+        if (category == null) return null;
+
+        return CategoryDTO.builder().id(category.getId()).name(category.getName()).build();
+    }
+
+    @Override
+    public CategoryDTO fromEntity(Category object) {
+        return from(object);
+    }
+
+    @Override
+    public Category toEntity(CategoryDTO object) {
+        return from(object);
     }
 }

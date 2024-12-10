@@ -1,11 +1,13 @@
 package com.dev.servlet.dto;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Getter
 public class ServiceException extends Exception {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceException.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceException.class);
 
     private final String message;
     private final int code;
@@ -13,19 +15,12 @@ public class ServiceException extends Exception {
     public ServiceException(Integer code, String message) {
         this.message = message;
         this.code = code;
-        logger.error(message);
+        LOGGER.error(message);
     }
 
     public ServiceException(String message) {
         this(500, message);
-        logger.error(message);
+        LOGGER.error(message);
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public int getCode() {
-        return code;
-    }
 }

@@ -3,8 +3,10 @@ package com.dev.servlet.utils;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.io.FileInputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 public final class PropertiesUtil {
 
@@ -14,7 +16,7 @@ public final class PropertiesUtil {
     /**
      * Gets property.
      *
-     * @param key
+     * @param key from the {@link Properties} file
      * @return the property
      */
     public static String getProperty(String key) {
@@ -50,31 +52,57 @@ public final class PropertiesUtil {
      * @param defaultValue the default value
      * @return the property
      */
-    public static String getProperty(String key, String defaultValue) {
+    public static <T> T getProperty(String key, T defaultValue) {
         String property = getProperty(key);
-        return ObjectUtils.defaultIfNull(property, defaultValue);
+        T value = parseProperty(property, defaultValue);
+        return ObjectUtils.defaultIfNull(value, defaultValue);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T parseProperty(String property, T defaultValue) {
+        if (property == null) return defaultValue;
+
+        try {
+            T object = null;
+            if (defaultValue instanceof String) {
+                object = (T) property;
+            } else if (defaultValue instanceof Integer) {
+                object = (T) Integer.valueOf(property);
+            } else if (defaultValue instanceof Long) {
+                object = (T) Long.valueOf(property);
+            } else if (defaultValue instanceof Boolean) {
+                object = (T) Boolean.valueOf(property);
+            } else if (defaultValue instanceof Double) {
+                object = (T) Double.valueOf(property);
+            } else if (defaultValue instanceof Collection<?> collection) {
+                object = (T) getPropertyCollection(property, collection);
+            }
+
+            return object;
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     /**
-     * Gets authorized actions.
+     * Gets property responseData.
      *
-     * @return the authorized actions
+     * @param property     the property
+     * @param defaultValue the default value
+     * @return the property responseData
      */
-    public static Set<String> getAuthorizedActions() {
-        String props = getProperty("auth.authorized", "login");
-        return Set.of(props.split(","));
-    }
+    @SuppressWarnings("unchecked")
+    private static <T> Collection<T> getPropertyCollection(String property, Collection<T> defaultValue) {
+        // if its a responseData, parse the responseData with the default value type
+        String[] split = property.split(",");
+        if (split.length == 0) return defaultValue;
 
-    /**
-     * Returns true if rate limit is enabled.
-     * If the environment is development, it is disabled (there is no need to limit the requests).
-     */
-    public static boolean isRateLimitEnabled() {
-        if ("development".equalsIgnoreCase(getProperty("env"))) {
-            return false;
+        String[] trimmed = Arrays.stream(split).map(String::trim).toArray(String[]::new);
+        T[] array = (T[]) new Object[trimmed.length];
+        for (int i = 0; i < trimmed.length; i++) {
+            array[i] = parseProperty(trimmed[i], defaultValue.iterator().next());
         }
 
-        String property = getProperty("rate.limit.enabled", "true");
-        return Boolean.parseBoolean(property);
+        return List.of(array);
     }
 }

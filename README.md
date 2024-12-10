@@ -1,98 +1,102 @@
-# Product Management Application
+# Full-Stack Java Web Application
 
-This project is a full Java/JSP web application designed for managing products. It follows the Model-View-Controller (MVC) architecture, ensuring a clear separation of concerns and facilitating maintainability and scalability.
+This project is a comprehensive Java/JSP web application.
+It follows the Model-View-Controller (MVC) architecture and uses the Java EE stack.
 
 ## Table of Contents
-- [Technology Stack](#technology-stack)
+
+- [Technology Stack](#tech-stack)
 - [URL Design](#url-design)
-- [Layout](#layout)
+- [Layout](#Some-layouts)
 - [Packages](#packages)
 - [Setup Instructions](#setup-instructions)
-- [Usage Instructions](#usage-instructions)
-- [Features in Progress](#features-in-progress)
+- [Notes](#notes)
 
-## Technology Stack
-- **Java (JDK 17)**: The core programming language.
-- **Hibernate (ORM)**: An Object-Relational Mapping framework that simplifies database interactions.
-- **Tomcat 9 (Server)**: A web server and servlet container used to deploy and run the application.
-- **PostgreSQL (Database)**: An open-source relational database management system.
-- **Criteria API**: A type-safe way to build queries for the database decoupling the queries from the underlying database.
+## Tech Stack
+
+- **Java (JDK 17)**: Core programming language.
+- **Hibernate (ORM)**: Simplifies database interactions.
+- **Tomcat 9 (Server)**: Web server and servlet container.
+- **PostgreSQL (Database)**: Open-source relational database management system.
+- **Criteria API**: Type-safe way to build database queries.
 
 ## URL Design
-- `{context}/view/{service}/{action}/{id|query}`
+
+- `{context}/view/{path}/{service}/{id|query}`
 
 Example:
+
 - `server/view/product/list/1`
 
-## Layout
-
-### Login
-#### `/login/form`
-![App login page](https://i.ibb.co/R0xM6Ps/Screenshot-2022-07-17-034301.png)
+## Some layouts
 
 ### Home Page
-#### `/product/list?<query>`
-![App home page](https://i.ibb.co/fFT7p2N/shopping-prod.png)
+
+#### `/product/list?page=1&limit=2`
+
+![App home page](./images/homepage.png)
 
 #### Tips:
+
 - *Sorting*: `sort=<field>&order=<asc|desc>&page=<page>&limit=<size>`
 - *Searching*: `q=<query>&k=<field>`
 
 Sample URLs:
+
 - `/product/list?page=1&limit=5&sort=id&order=desc`
 - `/product/list?q=macbook+pro&k=name`
 
 Default values can be changed in the `app.properties` file.
 
 ### Product
-#### `/product/list/<id>`
-![App product list page](https://i.ibb.co/1fy8JtG/Screenshot.png)
 
-### User
-#### `/user/list/<id>`
-![App user list page](https://i.ibb.co/nBbGMtG/temp.png)
+#### `/product/list/{id}`
 
-### Error page (in progress)
-#### `/product/list/<invalid_id>`
-![App not found page](https://i.postimg.cc/Sx8D8GZP/Screenshot-2024-08-10-174059.png)
+![App product list page](./images/product-list.png)
+
+### Info Page
+
+[comment]: <> (Found on the web, author unknown)
+![Error](./images/cat_404.gif)
 
 ## Packages
+
 ```
-├───main
+───main
 │   ├───java
 │   │   └───com
 │   │       └───dev
 │   │           └───servlet
 │   │               ├───builders
-│   │               ├───business        (services)
-│   │               │   └───base 
+│   │               ├───business
+│   │               │   └───shared
 │   │               ├───controllers
-│   │               ├───dao             (infra)
-│   │               ├───dto             (data transfer objects)
-│   │               ├───filter          (servlet filters)
-│   │               ├───interfaces      (contracts)
-│   │               ├───listeners 
-│   │               ├───mapper          (object mapping/transfers)
-│   │               ├───pojo            (plain old java objects)
+│   │               ├───dao
+│   │               ├───dto
+│   │               ├───filter
+│   │               ├───interfaces
+│   │               ├───listeners
+│   │               ├───mapper
+│   │               ├───pojo
 │   │               │   ├───enums
-│   │               │   └───records     (Immutable objects)
-│   │               ├───providers       (dependency injection, sevice locator etc.)
+│   │               │   └───records
+│   │               ├───providers
 │   │               ├───transform
 │   │               └───utils
 │   ├───resources
 │   │   └───META-INF
-│   │       └───sql                     (database scripts, default data, etc.)
+│   │       └───sql
 │   └───webapp
-│       ├───assets                      (images, fonts, etc.)
-│       ├───css                         (stylesheets)
+│       ├───assets
+│       ├───css
 │       ├───META-INF
 │       ├───web
 │       │   └───WEB-INF
 │       └───WEB-INF
-│           ├───jspf                    (JSP fragments)
-│           └───view                    
-│               ├───components          (JSP components like header, footer, etc.)
-│               └───pages               (JSP pages)
+│           ├───jspf
+│           └───view
+│               ├───components
+│               └───pages
 │                   ├───category
 │                   ├───inventory
 │                   ├───product
@@ -100,11 +104,10 @@ Default values can be changed in the `app.properties` file.
 └───test
     └───java
         └───servlets
-            └───utils
-
 ```
 
 ## Setup Instructions
+
 1. Clone the repository:
     ```sh
     git clone https://github.com/m-feliciano/servlets.git
@@ -138,20 +141,24 @@ Default values can be changed in the `app.properties` file.
     # The database connection is set in the `resources/META-INF/persistence.xml` file.
     ```
 
-5. Deploy the application to Tomcat:
+5. Setting up the database:
+    - Run the scripts in the `resources/META-INF/sql` folder to create the tables and insert initial data.
+    - Update the `persistence.xml` file with your database credentials.
+    - Update the `app.properties` file as needed.
+<br><br>
+6. Deploy the application to Tomcat:
     - Install Tomcat 9 on your machine.
     - Copy the generated WAR file to the Tomcat `webapps` directory.
     - Start the Tomcat server.
+<br><br>
+7. Usage Instructions
+   - Access the application at `<server>/view/<context-path>` (e.g., `http://localhost:8080/view/login/form`).
 
-## Usage Instructions
-- Access the application at `http://localhost:8080/<context-path>`
-- Use the provided URLs to navigate through the application.
+## Notes
+***Note***: This project was initially created years ago to learn Java EE, core Servlet/JSP, and JPA. It has been updated to incorporate the latest Java features and best practices.
 
-## Features in Progress
-- [x] Implement pagination
-- [x] Export/Import data to CSV
-- [ ] Decouple backend from frontend
-- [ ] Dockerize the application
-- [ ] Jasper Reports
+There is a lot of room for improvement, 
+like refactoring the frontend joining the files into a single one using `JSP fragments`, 
+and `JSTL` to render the content dynamically.
 
-[Back to top](#product-management-application)
+[Back to top](#full-stack-java-web-application)

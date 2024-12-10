@@ -1,11 +1,9 @@
 package com.dev.servlet.business;
 
-import com.dev.servlet.business.base.BaseRequest;
+import com.dev.servlet.business.shared.BusinessShared;
 import com.dev.servlet.controllers.ProductController;
-import com.dev.servlet.dto.CategoryDto;
-import com.dev.servlet.dto.ProductDto;
-import com.dev.servlet.dto.ServiceException;
-import com.dev.servlet.interfaces.IPagination;
+import com.dev.servlet.dto.CategoryDTO;
+import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.interfaces.ResourceMapping;
 import com.dev.servlet.interfaces.ResourcePath;
 import com.dev.servlet.mapper.ProductMapper;
@@ -13,240 +11,260 @@ import com.dev.servlet.pojo.Category;
 import com.dev.servlet.pojo.Inventory;
 import com.dev.servlet.pojo.Product;
 import com.dev.servlet.pojo.enums.StatusEnum;
-import com.dev.servlet.pojo.records.Pagination;
 import com.dev.servlet.pojo.records.Query;
-import com.dev.servlet.pojo.records.StandardRequest;
-import com.dev.servlet.utils.CurrencyFormatter;
+import com.dev.servlet.pojo.records.Request;
+import com.dev.servlet.pojo.records.Response;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
  * Product Business
  * <p>
  * This class is responsible for handling the product business logic.
  *
- * @see BaseRequest
+ * @see BaseBusiness
  */
+@Setter
+@NoArgsConstructor
 @Singleton
 @ResourcePath("product")
-public class ProductBusiness extends BaseRequest implements IPagination<Product> {
-    public static final String PRODUCT = "product";
-    public static final String CATEGORIES = "categories";
-    public static final String FORWARD_PAGES_PRODUCT = "forward:pages/product/";
-    public static final String REDIRECT_VIEW_PRODUCT = "redirect:/view/product/";
-    private static final String REDIRECT_ACTION_LIST_BY_ID = REDIRECT_VIEW_PRODUCT + "list/<id>";
+public class ProductBusiness extends BaseBusiness<Product, Long, ProductDTO> {
 
-    private ProductController controller;
-    private CategoryBusiness categoryBusiness;
-    private ProductShared productShared;
-
-    public ProductBusiness() {
-        // Empty constructor
-    }
+    private static final String PRODUCT = "product";
+    private static final String CATEGORIES = "categories";
 
     @Inject
-    public void setDependencies(ProductController controller,
-                                CategoryBusiness categoryBusiness,
-                                ProductShared productShared) {
-        this.controller = controller;
-        this.categoryBusiness = categoryBusiness;
-        this.productShared = productShared;
+    private CategoryBusiness categoryBusiness;
+    @Inject
+    private BusinessShared businessShared;
+
+    @Inject
+    protected ProductBusiness(ProductController controller) {
+        super(controller);
+        this.mapper = new ProductMapper();
     }
+
+    @Override
+    protected ProductController getController() {
+        return (ProductController) super.getController();
+    }
+
+    @Override
+    protected Product getEntity(Request request) {
+        Product product = super.getEntity(request);
+        product = Optional.ofNullable(product).orElse(new Product());
+
+        String categoryId = request.getParameter(CATEGORY);
+        if (categoryId != null && !categoryId.isBlank()) {
+            product.setCategory(new Category(Long.valueOf(categoryId)));
+        }
+
+        Query query = request.getQuery();
+        if (query.getSearch() != null && query.getType() != null) {
+            if (query.getType().equals("name")) {
+                product.setName(query.getSearch());
+            } else if (query.getType().equals("description")) {
+                product.setDescription(query.getSearch());
+            }
+        }
+
+        return product;
+    }
+
 
     /**
      * Forward
      *
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(NEW)
-    public String forwardRegister(StandardRequest request) {
-        List<CategoryDto> categories = categoryBusiness.getAllFromCache(request);
-        request.setAttribute(CATEGORIES, categories);
-        return FORWARD_PAGES_PRODUCT + "formCreateProduct.jsp";
+    public Response forwardRegister(Request request, String token) {
+        LOGGER.trace("");
+
+        Response response = new Response(HttpServletResponse.SC_FOUND);
+        response.data(CATEGORIES, categoryBusiness.getAllFromCache(token));
+        return response.next(super.forwardTo("formCreateProduct"));
     }
 
     /**
      * Create one
      *
-     * @param request
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(CREATE)
-    public String register(StandardRequest request) throws ServiceException {
+    public Response register(Request request, String token) {
+        LOGGER.trace("");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        LocalDate localDate = LocalDate.parse(LocalDate.now().format(formatter), formatter);
+        Product product = this.getEntity(request);
+        product.setUser(getUser(token));
+        product.setRegisterDate(new Date());
+        product.setStatus(StatusEnum.ACTIVE.getValue());
 
-        Product product = new Product(
-                request.getParameter("name"),
-                request.getParameter("description"),
-                request.getParameter("url"),
-                localDate,
-                CurrencyFormatter.stringToBigDecimal(request.getRequiredParameter("price")));
+        super.save(product);
 
-        product.setUser(getUser(request));
-        product.setCategory(new Category(Long.valueOf(request.getRequiredParameter("category"))));
-        product.setStatus(StatusEnum.ACTIVE.value);
-        controller.save(product);
-        request.setAttribute(PRODUCT, product);
-        request.setStatus(HttpServletResponse.SC_CREATED);
-
-        return REDIRECT_ACTION_LIST_BY_ID.replace("<id>", product.getId().toString());
+        return super.createResponse(HttpServletResponse.SC_CREATED, product, super.redirectTo(product.getId()));
     }
 
     /**
      * Forward edit
      *
-     * @param request
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(EDIT)
-    public String edit(StandardRequest request) throws IOException, ServiceException {
-        Long resourceId = request.getId();
-        if (resourceId == null) throwResourceNotFoundException(null);
+    public Response edit(Request request, String token) {
+        LOGGER.trace("");
 
-        Product product = new Product(resourceId);
-        product.setUser(getUser(request));
-        product = controller.find(product);
-        if (product == null) throwResourceNotFoundException(resourceId);
+        long entityId = Long.parseLong(request.getEntityId());
+        Optional<Product> optional = this.findById(token, entityId);
+        if (optional.isEmpty()) {
+            return super.responseEntityNotFound(entityId);
+        }
 
-        request.setAttribute(PRODUCT, ProductMapper.from(product));
-        request.setAttribute(CATEGORIES, categoryBusiness.getAllFromCache(request));
+        List<CategoryDTO> categories = categoryBusiness.getAllFromCache(token);
 
-        return FORWARD_PAGES_PRODUCT + "formUpdateProduct.jsp";
+        var responseData = new Response.Data()
+                .add(PRODUCT, optional.get())
+                .add(CATEGORIES, categories);
+
+        return Response.of(responseData).next(super.forwardTo("formUpdateProduct"));
     }
 
     /**
      * List one or many (with query)
      *
-     * @param request
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(LIST)
-    public String getAll(StandardRequest request) throws Exception, ServiceException {
-        Product product = new Product();
-        if (request.getId() != null) {
-            product.setId(request.getId());
-            product.setUser(getUser(request));
-            ProductDto dto = find(product);
+    public Response getAll(Request request, String token) {
+        LOGGER.trace("");
 
-            if (dto == null) throwResourceNotFoundException(request.getId());
+        if (request.getEntityId() != null) {
+            long entityId = Long.parseLong(request.getEntityId());
 
-            request.setAttribute(PRODUCT, dto);
-            return FORWARD_PAGES_PRODUCT + "formListProduct.jsp";
+            Optional<Product> optional = this.findById(token, entityId);
+            if (optional.isEmpty()) {
+                return super.responseEntityNotFound(entityId);
+            }
+
+            return super.createResponse(HttpServletResponse.SC_OK, optional.get(), super.forwardTo("formListProduct"));
         }
 
-        product.setUser(getUser(request));
+        Product filter = this.getEntity(request);
+        filter.setUser(getUser(token));
 
         Query query = request.getQuery();
-        if (query.search() != null && query.type() != null) {
-            if (query.type().equals("name")) {
-                product.setName(query.search());
-            } else if (query.type().equals("description")) {
-                product.setDescription(query.search());
-            }
+        Collection<Long> productIds = super.findAllOnlyIds(filter);
+        query.getPagination().setTotalRecords(productIds.size());
+
+        var categoryList = categoryBusiness.getAllFromCache(token);
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        List<ProductDTO> products = List.of();
+        if (!productIds.isEmpty()) {
+            totalPrice = this.getController().calculateTotalPrice(productIds);
+
+            products = super.getAllPageable(productIds, query.getPagination()).stream()
+                    .map(super::fromEntity)
+                    .toList();
         }
 
-        query.pagination().setTotalRecords(getTotalResults(product).intValue());
+        var responseData = new Response.Data()
+                .add("products", products)
+                .add(CATEGORIES, categoryList)
+                .add("totalPrice", totalPrice);
 
-        List<ProductDto> products = findAll(product, query.pagination())
-                .stream()
-                .map(ProductMapper::from)
-                .collect(Collectors.toList());
-
-        request.setAttribute("products", products);
-        request.setAttribute(CATEGORIES, categoryBusiness.getAllFromCache(request));
-        request.setStatus(HttpServletResponse.SC_OK);
-
-        return FORWARD_PAGES_PRODUCT + "listProducts.jsp";
+        return Response.of(responseData).next(super.forwardTo("listProducts"));
     }
 
     /**
      * Update one
      *
-     * @param request
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(UPDATE)
-    public String update(StandardRequest request) throws ServiceException {
-        if (request.getId() == null) throwResourceNotFoundException(null);
+    public Response update(Request request, String token) {
+        LOGGER.trace("");
 
-        Product product = new Product(request.getId());
-        product.setUser(getUser(request));
-        product = controller.find(product);
+        Long entityId = Long.parseLong(request.getEntityId());
+        Optional<Product> optional = this.findById(token, entityId);
+        if (optional.isEmpty()) {
+            return super.responseEntityNotFound(entityId);
+        }
 
-        if (product == null) throwResourceNotFoundException(request.getId());
+        Product productRequest = this.getEntity(request);
 
-        product = controller.find(product);
-        product.setName(request.getParameter("name"));
-        product.setDescription(request.getParameter("description"));
-        product.setPrice(CurrencyFormatter.stringToBigDecimal(request.getRequiredParameter("price")));
-        product.setUrl(request.getParameter("url"));
-        product.setCategory(new Category(Long.parseLong(request.getRequiredParameter("category"))));
+        Product product = optional.get();
+        product.setName(productRequest.getName());
+        product.setDescription(productRequest.getDescription());
+        product.setPrice(productRequest.getPrice());
+        product.setUrl(productRequest.getUrl());
+        product.setCategory(productRequest.getCategory());
 
-        product = controller.update(product);
-        request.setAttribute(PRODUCT, ProductMapper.from(product));
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        return REDIRECT_ACTION_LIST_BY_ID.replace("<id>", product.getId().toString());
+        super.update(product);
+
+        return super.createResponse(HttpServletResponse.SC_OK, product, super.redirectTo(product.getId()));
     }
 
     /**
      * Delete one
      *
-     * @param request
+     * @param request {@link Request}
      * @return the next path
      */
     @ResourceMapping(DELETE)
-    public String delete(StandardRequest request) throws ServiceException {
-        if (request.getId() == null) throwResourceNotFoundException(null);
+    public Response delete(Request request, String token) {
+        LOGGER.trace("");
 
-        Product product = new Product(request.getId());
-        product.setUser(getUser(request));
+        Long entityId = Long.parseLong(request.getEntityId());
 
-        Inventory inventory = new Inventory();
-        inventory.setProduct(product);
-        if (productShared.hasInventory(inventory)) {
-            throw new ServiceException(HttpServletResponse.SC_CONFLICT, "Product has inventory.");
+        Optional<Product> optional = this.findById(token, entityId);
+        if (optional.isEmpty()) {
+            return super.responseEntityNotFound(entityId);
         }
 
-        controller.delete(product);
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        return REDIRECT_VIEW_PRODUCT + "list";
-    }
+        Product product = optional.get();
 
-    @Override
-    public Long getTotalResults(Product object) {
-        return controller.getTotalResults(object);
-    }
+        Inventory inventory = new Inventory();
+        inventory.setUser(getUser(token));
+        inventory.setProduct(product);
 
-    /**
-     * Find All
-     *
-     * @param product
-     * @param pagination
-     * @return the next path
-     */
-    @Override
-    public Collection<Product> findAll(Product product, Pagination pagination) {
-        return controller.findAll(product, pagination);
+        if (businessShared.hasInventory(inventory)) {
+            return Response.ofError(HttpServletResponse.SC_CONFLICT, "Product has inventory.");
+        }
+
+        super.delete(product);
+
+        return super.createResponse(HttpServletResponse.SC_NO_CONTENT, null, super.redirectTo(LIST));
     }
 
     /**
-     * Find by id
+     * Get by id
      *
-     * @param product
-     * @return the next path
+     * @param token the user token
+     * @param id    the product id
+     * @return {@link Optional} of {@link Product}
      */
-    public ProductDto find(Product product) {
-        Product p = controller.find(product);
-        return ProductMapper.from(p);
+    private Optional<Product> findById(String token, Long id) {
+        if (id == null) return Optional.empty();
+
+        Product product = new Product(id);
+        product.setUser(getUser(token));
+        product = super.find(product);
+
+        return Optional.ofNullable(product);
     }
 }

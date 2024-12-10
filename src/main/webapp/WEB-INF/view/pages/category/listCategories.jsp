@@ -1,6 +1,8 @@
 <%@ include file="/WEB-INF/jspf/common-imports.jspf" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
+<title>Categories</title>
+
 <div class="main">
     <c:if test="${ empty categories }">
         <div class="d-flex flex-row-reverse mb20 mb-4">
@@ -26,19 +28,25 @@
                             <th width="10%" scope="row">${ category.id }</th>
                             <td width=50%>${ category.name }</td>
                             <td width=25%>
-                                <a type="button" href="${ listCategories }/${ category.id }" class="btn btn-primary">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a type="button" href="${ deleteCategory }/${ category.id }" class="btn btn-danger">
-                                    <i class="bi bi-trash3"></i>
-                                </a>
+                                <form action="${ listCategories }/${ category.id }" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-auto btn-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </form>
+                                <form action="${ deleteCategory }/${ category.id }" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-auto btn-danger" onclick="return confirm('Are you sure?')">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     </c:forEach>
                     </tbody>
                 </table>
                 <div class="d-flex flex-row-reverse mb20">
-                    <a type="button" href="${ newCategory }" class="btn btn-success">New</a>
+                    <a type="button" href="${ newCategory }" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> New
+                    </a>
                 </div>
             </div>
         </div>

@@ -1,7 +1,15 @@
 package com.dev.servlet.pojo;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.ColumnTransformer;
+
 import javax.persistence.Column;
-import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,134 +17,56 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.util.Date;
 
-@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@javax.persistence.Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "tb_product")
-public class Product {
+@ToString(exclude = {"user", "category"})
+public class Product implements Identifier<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "name", length = 100)
+    @Column(name = "name", length = 100, nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "url_img", columnDefinition = "TEXT")
+    @Column(name = "url_img")
     private String url;
 
     @Column(name = "register_date")
-    private LocalDate registerDate;
+    @Temporal(TemporalType.DATE)
+    private Date registerDate;
 
-    @Column(name = "price")
+    @Column(name = "price", nullable = false)
     private BigDecimal price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
+    @ColumnTransformer(write = "UPPER(?)")
     private String status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    public Product() {
-    }
-
     public Product(Long id) {
         this.id = id;
-    }
-
-    public Product(String name, String description, String url, LocalDate registerDate, BigDecimal price) {
-        this.name = name;
-        this.description = description;
-        this.url = url;
-        this.registerDate = registerDate;
-        this.price = price;
-    }
-
-    public Product(Long id, String name, String description, String url, LocalDate registerDate, BigDecimal price) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.url = url;
-        this.registerDate = registerDate;
-        this.price = price;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public LocalDate getRegisterDate() {
-        return registerDate;
-    }
-
-    public void setRegisterDate(LocalDate registerDate) {
-        this.registerDate = registerDate;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Category getCategory() {
-        return category;
     }
 
     public void setCategory(Category category) {

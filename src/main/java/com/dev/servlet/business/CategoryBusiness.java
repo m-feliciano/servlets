@@ -1,176 +1,209 @@
 package com.dev.servlet.business;
 
-import com.dev.servlet.business.base.BaseRequest;
 import com.dev.servlet.controllers.CategoryController;
-import com.dev.servlet.dto.CategoryDto;
+import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.dto.ServiceException;
-import com.dev.servlet.interfaces.ResourcePath;
 import com.dev.servlet.interfaces.ResourceMapping;
+import com.dev.servlet.interfaces.ResourcePath;
 import com.dev.servlet.mapper.CategoryMapper;
 import com.dev.servlet.pojo.Category;
 import com.dev.servlet.pojo.enums.StatusEnum;
-import com.dev.servlet.pojo.records.StandardRequest;
+import com.dev.servlet.pojo.records.Request;
+import com.dev.servlet.pojo.records.Response;
 import com.dev.servlet.utils.CacheUtil;
 import com.dev.servlet.utils.CollectionUtils;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-
+import java.util.Optional;
 
 /**
- * Category Busines
+ * Category Business.
  * <p>
  * This class is responsible for handling the category business logic.
  *
- * @see BaseRequest
+ * @see BaseBusiness
  * @since 1.0
  */
+@Setter
+@NoArgsConstructor
 @Singleton
 @ResourcePath("category")
-public class CategoryBusiness extends BaseRequest {
-    private static final String CATEGORY = "category";
-    private static final String CACHE_KEY = "categories";
-    public static final String FORWARD_PAGES_CATEGORY = "forward:pages/category/";
-    public static final String REDIRECT_VIEW_CATEGORY = "redirect:/view/category/";
-    private static final String REDIRECT_ACTION_LIST_BY_ID = REDIRECT_VIEW_CATEGORY + "list/<id>";
+public class CategoryBusiness extends BaseBusiness<Category, Long, CategoryDTO> {
 
-    private CategoryController controller;
-
-    public CategoryBusiness() {
-        // Empty constructor
-    }
+    private static final String CACHE_KEY = "categoryCacheKey";
 
     @Inject
-    public void setDependencies(CategoryController controller) {
-        this.controller = controller;
+    public CategoryBusiness(CategoryController controller) {
+        super(controller);
+        this.mapper = new CategoryMapper();
     }
 
     /**
-     * Forward
+     * Forward to the register form.
      *
-     * @return the next path
+     * @return the response with the next path
      */
     @ResourceMapping(NEW)
-    public String forwardRegister(StandardRequest request) {
-        return FORWARD_PAGES_CATEGORY + "formCreateCategory.jsp";
+    public Response forwardRegister() {
+        LOGGER.trace("");
+
+        Response response = new Response(HttpServletResponse.SC_FOUND);
+        return response.next(super.forwardTo("formCreateCategory"));
     }
 
     /**
-     * create category.
+     * Create a new category.
      *
-     * @param request
-     * @return the string
+     * @param request the request containing the category details
+     * @param token   the user token
+     * @return the response with the next path
+     * @throws ServiceException if an error occurs during creation
      */
     @ResourceMapping(CREATE)
-    public String registerOne(StandardRequest request) throws ServiceException {
-        Category cat = new Category();
-        cat.setUser(getUser(request));
-        cat.setName(request.getRequiredParameter("name"));
-        cat.setStatus(StatusEnum.ACTIVE.value);
-        controller.save(cat);
-        request.setStatus(HttpServletResponse.SC_CREATED);
-        CacheUtil.clear(CACHE_KEY, request.getToken());
-        return REDIRECT_ACTION_LIST_BY_ID.replace("<id>", cat.getId().toString());
+    public Response registerOne(Request request, String token) throws ServiceException {
+        LOGGER.trace("");
+
+        Category category = this.getEntity(request);
+        category.setUser(getUser(token));
+        category.setStatus(StatusEnum.ACTIVE.getValue());
+        super.save(category);
+
+        CacheUtil.clear(CACHE_KEY, token);
+
+        return super.createResponse(HttpServletResponse.SC_CREATED, category, super.redirectTo(category.getId()));
     }
 
     /**
-     * update category.
+     * Update an existing category.
      *
-     * @param request
-     * @return the string
+     * @param request {@link Request}
+     * @param token
+     * @return {@link Response}
+     * @throws ServiceException if an error occurs during update
      */
     @ResourceMapping(UPDATE)
-    public String update(StandardRequest request) throws ServiceException {
-        if (request.getId() == null) throwResourceNotFoundException(null);
+    public Response update(Request request, String token) throws ServiceException {
+        LOGGER.trace("");
 
-        CategoryDto categoryDto = findById(request.getId(), request);
-        categoryDto.setName(request.getParameter("name"));
+        long id = Long.parseLong(request.getEntityId());
+        Optional<Category> optional = this.findById(id, token);
+        if (optional.isEmpty()) {
+            return super.responseEntityNotFound(id);
+        }
 
-        Category category = CategoryMapper.from(categoryDto);
-        controller.update(category);
+        Category category = optional.get();
+        category.setName(request.getRequiredParameter("name").toUpperCase());
+        super.update(category);
 
-        request.setAttribute(CATEGORY, categoryDto);
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        CacheUtil.clear(CACHE_KEY, request.getToken());
-        return REDIRECT_ACTION_LIST_BY_ID.replace("<id>", categoryDto.getId().toString());
+        CacheUtil.clear(CACHE_KEY, token);
+
+        return super.createResponse(HttpServletResponse.SC_OK, category, super.redirectTo(category.getId()));
     }
 
     /**
-     * List category by id.
+     * List categories or a specific category.
      *
-     * @param request
-     * @return the string
+     * @param request {@link Request}
+     * @param token
+     * @return {@link Response}
      */
     @ResourceMapping(LIST)
-    public String list(StandardRequest request) {
-        CategoryDto dto = findById(request.getId(), request);
-        if (dto != null) {
-            request.setAttribute(CATEGORY, dto);
-            return FORWARD_PAGES_CATEGORY + "formListCategory.jsp";
+    public Response list(Request request, String token) {
+        LOGGER.trace("");
+
+        if (request.getEntityId() != null) {
+            long id = Long.parseLong(request.getEntityId());
+
+            String forward = forwardTo("formListCategory");
+            Optional<Response> optional = this.findById(id, token)
+                    .map(c -> createResponse(HttpServletResponse.SC_OK, c, forward));
+
+            return optional.orElseGet(() -> super.responseEntityNotFound(id));
         }
 
-        List<CategoryDto> all = getAllFromCache(request);
-
+        List<CategoryDTO> categories = getAllFromCache(token);
         String parameter = request.getParameter("name");
         if (parameter != null) {
-            all = all.stream().filter(c -> c.getName().toLowerCase().contains(parameter.toLowerCase())).toList();
+            categories = categories.stream()
+                    .filter(c -> c.getName().toLowerCase().contains(parameter.toLowerCase()))
+                    .toList();
         }
 
-        request.setAttribute("categories", all);
-        return FORWARD_PAGES_CATEGORY + "listCategories.jsp";
+        Response response = Response.of(Response.Data.of("categories", categories));
 
+        return response.next(super.forwardTo("listCategories"));
     }
 
     /**
-     * Edit category by id.
+     * Edit an existing category.
      *
-     * @param request
-     * @return the string
+     * @param request the request containing the category ID
+     * @param token   the user token
+     * @return the response with the next path
      */
     @ResourceMapping(EDIT)
-    public String edit(StandardRequest request) {
-        CategoryDto dto = findById(request.getId(), request);
-        request.setAttribute(CATEGORY, dto);
-        return FORWARD_PAGES_CATEGORY + "formUpdateCategory.jsp";
+    public Response edit(Request request, String token) {
+        LOGGER.trace("");
+
+        long id = Long.parseLong(request.getEntityId());
+        Optional<Category> optional = this.findById(id, token);
+
+        Optional<Response> response = optional.map(
+                c -> createResponse(HttpServletResponse.SC_OK, c, super.forwardTo("formUpdateCategory")));
+
+        return response.orElseGet(() -> super.responseEntityNotFound(id));
+
     }
 
     /**
-     * delete category by id.
+     * Delete an existing category.
      *
-     * @param request
-     * @return the string
+     * @param request the request containing the category ID
+     * @param token   the user token
+     * @return the response with the next path
+     * @throws ServiceException if an error occurs during deletion
      */
     @ResourceMapping(DELETE)
-    public String delete(StandardRequest request) throws ServiceException {
-        if (request.getId() == null) throwResourceNotFoundException(null);
+    public Response delete(Request request, String token) throws ServiceException {
+        LOGGER.trace("");
 
-        Category cat = new Category(request.getId());
-        cat.setUser(getUser(request));
-        controller.delete(cat);
-        CacheUtil.clear(CACHE_KEY, request.getToken());
-        request.setStatus(HttpServletResponse.SC_NO_CONTENT);
-        return REDIRECT_VIEW_CATEGORY + "list";
+        long id = Long.parseLong(request.getEntityId());
+
+        Optional<Category> optional = this.findById(id, token);
+        if (optional.isEmpty()) {
+            return super.responseEntityNotFound(id);
+        }
+
+        Category category = optional.get();
+        super.delete(category);
+        CacheUtil.clear(CACHE_KEY, token);
+
+        Response response = new Response(HttpServletResponse.SC_NO_CONTENT);
+        return response.next(redirectTo(LIST));
     }
 
     /**
-     * Find all
+     * Get all categories from cache.
      *
-     * @param request
-     * @return {@link List}
+     * @param token the user token
+     * @return the list of categories
      */
-    public List<CategoryDto> getAllFromCache(StandardRequest request) {
-        List<CategoryDto> dtoList = CacheUtil.get(CACHE_KEY, request.getToken());
+    public List<CategoryDTO> getAllFromCache(String token) {
+        List<CategoryDTO> dtoList = CacheUtil.get(CACHE_KEY, token);
 
-        if (CollectionUtils.isNullOrEmpty(dtoList)) {
+        if (CollectionUtils.isEmpty(dtoList)) {
             Category category = new Category();
-            category.setUser(getUser(request));
-            var categories = controller.findAll(category);
+            category.setUser(getUser(token));
+            var categories = super.findAll(category);
 
-            if (!CollectionUtils.isNullOrEmpty(categories)) {
-                dtoList = categories.stream().map(CategoryMapper::from).toList();
-                CacheUtil.set(CACHE_KEY, request.getToken(), dtoList);
+            if (!CollectionUtils.isEmpty(categories)) {
+                dtoList = categories.stream().map(super::fromEntity).toList();
+                CacheUtil.set(CACHE_KEY, token, dtoList);
             }
         }
 
@@ -178,20 +211,20 @@ public class CategoryBusiness extends BaseRequest {
     }
 
     /**
-     * Find by ID
+     * Find a category by ID.
      *
-     * @param id
-     * @param request
-     * @return {@link Category}
+     * @param id    the category ID
+     * @param token the user token
+     * @return the category DTO
      */
-    public CategoryDto findById(Long id, StandardRequest request) {
-        if (id == null) return null;
+    public Optional<Category> findById(Long id, String token) {
+        if (id == null) return Optional.empty();
 
-        List<CategoryDto> dtoList = getAllFromCache(request);
-        if (!CollectionUtils.isNullOrEmpty(dtoList)) {
-            return dtoList.stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null);
-        }
+        List<CategoryDTO> categories = getAllFromCache(token);
 
-        return null;
+        return categories.stream()
+                .filter(c -> c.getId().equals(id))
+                .findFirst()
+                .map(super::toEntity);
     }
 }

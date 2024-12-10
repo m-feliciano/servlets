@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("unchecked")
 public final class CloneUtils {
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();

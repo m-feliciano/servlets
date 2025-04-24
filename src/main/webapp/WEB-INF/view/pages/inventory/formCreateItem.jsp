@@ -2,7 +2,7 @@
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <div class="main">
-    <form action="${baseLink}/v1${ createItem }" method="post">
+    <form action="${baseLink}${version}${ createItem }" method="post">
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="inputProductId" class="form-label">PRODUCT ID</label>

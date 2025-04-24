@@ -1,5 +1,5 @@
 <%@ include file="/WEB-INF/routes/category-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
+<%@ page import="com.dev.servlet.domain.transfer.response.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -11,7 +11,7 @@
 <div class="main">
     <c:if test="${ empty categories }">
         <div class="d-flex flex-row-reverse mb20 mb-4">
-            <a type="button" href="${baseLink}/v1${ newCategory }" class="btn btn btn-success">New</a>
+            <a type="button" href="${baseLink}${version}${ newCategory }" class="btn btn btn-success">New</a>
         </div>
         <p>No one new category created.</p>
     </c:if>
@@ -40,10 +40,10 @@
 <%--                                        <i class="bi bi-eye"></i>--%>
 <%--                                    </button>--%>
 <%--                                </form>--%>
-                                <a type="button" href="${baseLink}/v1${ listCategory }/${ category.id }" class="btn btn-auto btn-primary">
+                                <a type="button" href="${baseLink}${version}${ listCategory }/${ category.id }" class="btn btn-auto btn-primary">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <form action="${baseLink}/v1${ deleteCategory }/${ category.id }" method="post" class="d-inline">
+                                <form action="${baseLink}${version}${ deleteCategory }/${ category.id }" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-auto btn-danger"
                                             onclick="return confirm('Are you sure?')">
                                         <i class="bi bi-trash3"></i>
@@ -55,7 +55,7 @@
                     </tbody>
                 </table>
                 <div class="d-flex flex-row-reverse mb20">
-                    <a type="button" href="${baseLink}/v1${ newCategory }" class="btn btn-success">
+                    <a type="button" href="${baseLink}${version}${ newCategory }" class="btn btn-success">
                         <i class="bi bi-plus-circle"></i> New
                     </a>
                 </div>

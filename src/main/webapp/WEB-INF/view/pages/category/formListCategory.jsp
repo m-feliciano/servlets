@@ -1,5 +1,5 @@
+<%@ page import="com.dev.servlet.domain.transfer.response.IHttpResponse" %>
 <%@ include file="/WEB-INF/routes/category-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -26,13 +26,13 @@
                 <jsp:param name="btnType" value="button"/>
                 <jsp:param name="btnClass" value="btn btn-light"/>
                 <jsp:param name="btnIcon" value="bi bi-arrow-left"/>
-                <jsp:param name="btnOnclick" value="onclick='window.location.href=`${baseLink}/v1${ listCategory }`'"/>
+                <jsp:param name="btnOnclick" value="onclick='window.location.href=`${baseLink}${version}${ listCategory }`'"/>
                 <jsp:param name="btnId" value="id='backButton'"/>
             </jsp:include>
 
             <span class="mr-2"></span>
 
-            <a type="button" href="${baseLink}/v1${ editCategory }/${ category.id }" class="btn btn-success">
+            <a type="button" href="${baseLink}${version}${ editCategory }/${ category.id }" class="btn btn-success">
                 Edit <i class="bi bi-pencil-square"></i>
             </a>
         </div>

@@ -2,7 +2,7 @@
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <div class="main">
-    <form action="${baseLink}/v1${ updateUser }/${user.id}" method="post">
+    <form action="${baseLink}${version}${ updateUser }/${user.id}" method="post">
         <div class="col-md-6">
             <div class="row ml5 mb-3 justify-center">
                 <div class="avatar mr-3 align-center">
@@ -10,7 +10,8 @@
                         <img src="${user.imgUrl}" alt="user" class="avatar-img rounded-circle">
                     </c:if>
                     <c:if test="${empty user.imgUrl or user.imgUrl eq ''}">
-                        <img src="<c:url value='/assets/avatar2.png'/>" alt="user" class="avatar-img rounded-circle">
+                        <img src="<c:url value='/resources/assets/avatar2.png'/>" alt="user"
+                             class="avatar-img rounded-circle">
                     </c:if>
                 </div>
                 <div class="col-md-9">

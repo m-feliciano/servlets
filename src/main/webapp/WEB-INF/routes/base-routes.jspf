@@ -1,4 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set value="/api" var="baseAPI"/>
+<c:set value="/v1" var="version"/>
 <c:url value="${baseAPI}" var="baseLink"/>
+<c:url value="${version}" var="version"/>

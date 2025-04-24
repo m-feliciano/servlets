@@ -7,7 +7,7 @@
 <body>
 <div class="login-container">
     <h2 class="text-center">Sign up</h2>
-    <form action="${baseLink}/v1${registerUser}" method="post">
+    <form action="${baseLink}${version}${registerUser}" method="post">
         <div class="mb-3">
             <label for="inputLogin" class="form-label">Email</label>
             <input type="text" id="inputLogin" name="login" value="${email}" class="form-control" placeholder="Email"
@@ -34,7 +34,7 @@
             <button type="submit" class="btn btn-primary">Sign up</button>
         </div>
         <div class="mt-3 text-center">
-            <button type="button" class="btn btn-link" onclick="window.location.href='${baseLink}/v1${loginPage}'">Login</button>
+            <button type="button" class="btn btn-link" onclick="window.location.href='${baseLink}${version}${loginPage}'">Login</button>
         </div>
     </form>
 </div>

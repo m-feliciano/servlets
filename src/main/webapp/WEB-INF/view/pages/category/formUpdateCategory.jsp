@@ -1,5 +1,5 @@
 <%@ include file="/WEB-INF/routes/category-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
+<%@ page import="com.dev.servlet.domain.transfer.response.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -8,7 +8,7 @@
 
 
 <div class="main">
-    <form action="${baseLink}/v1${ updateCategory }/${category.id}" method="post">
+    <form action="${baseLink}${version}${ updateCategory }/${category.id}" method="post">
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="inputId" class="form-label">ID</label>

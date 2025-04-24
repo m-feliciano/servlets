@@ -1,244 +1,89 @@
-# Full-Stack Java Web Application
+# Full-Stack Java EE Web Application
 
-This project is a comprehensive Java/JSP web application.
-It follows the Model-View-Controller (MVC) architecture and uses the Java EE stack.
-I've used the latest Java features and best practices to build this application.
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/m-feliciano/servlets)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/mit)
+[![Java](https://img.shields.io/badge/java-17-blue)](https://adoptopenjdk.net/)
 
-## Table of Contents
+---
 
-- [Technology Stack](#tech-stack)
-- [URL Design](#url-design)
-- [Layout](#Some-layouts)
-- [Packages](#packages)
-- [Setup Instructions](#setup-instructions)
-- [Notes](#notes)
+Enterprise Java EE application implementing clean architecture principles with comprehensive security, caching, and testing infrastructure.
 
-## Tech Stack
+---
 
-- **Java (JDK 17)**: Core programming language.
-- **Hibernate (ORM)**: Simplifies database interactions.
-- **Tomcat 9 (Server)**: Web server and servlet container.
-- **PostgreSQL (Database)**: Open-source relational database management system.
-- **Criteria API**: Type-safe way to build database queries.
+## 🚀 Quick Start
 
-## URL Design
+This is a production-ready Java EE application featuring clean architecture, JWT authentication, multi-layer caching, and comprehensive testing. Built with Java 17, Hibernate/JPA, and PostgreSQL.
 
-The URL structure is designed to be RESTful and easy to understand.
+**📚 [Complete Documentation](docs/en/)** | **🏗️ [Architecture Diagrams](docs/en/RELATIONSHIP_DIAGRAMS.md)** | **📋 [Project Summary](docs/en/PROJECT_SUMMARY.md)**
 
-- `{context}/api/v{version}/{path}/{service}/?{query}`
+---
 
-The URL structure is as follows:
+## 🏗️ Architecture
 
-- `{context}`: The application context path e.g., `https://your-domain.com/`.
-- `{version}`: The API version, e.g., `v1`.
-- `{path}`: The controller path.
-- `{service}`: The service to be performed.
-- `{query}`: The query parameters if needed.
-
-Example GET:
-
-- `/api/{version}/product/list` - List all products
-- `/api/{version}/product/list/{id}` - Get product by ID
-
-Example POST:
-
-- `/api/{version}/product/update/{id}` - Update product
-
-Example of controller:
-
-```java
-
-@Controller(path = "/product")
-public final class ProductController extends BaseController<Product, Long> {
-
-    // POST ap1/v2/user/registerUser
-    @RequestMapping(
-            value = "/registerUser",
-            method = RequestMethod.POST,
-            apiVersion = "v2",
-            requestAuth = false,
-            validators = {
-                    @Validator(values = "login", constraints = {
-                            @Constraints(isEmail = true, message = "Login must be a valid email")
-                    }),
-                    @Validator(values = {"password", "confirmPassword"},
-                            constraints = {
-//                                    @Constraints(minLength = 5, maxLength = 30, message = "Password must be between {0} and {1} characters")
-                                    @Constraints(minLength = 5, message = "Password must have at least {0} characters"),
-                                    @Constraints(maxLength = 30, message = "Password must have at most {0} characters"),
-                            }),
-            })
-    public IHttpResponse<Void> register(Request request) throws ServiceException {
-       this.getModel().register(request);
-       // Created
-       return super.newHttpResponse(201, null, "redirect:/api/v1/login/form");
-    }
-    
-    // GET /category/list/{id}
-    @RequestMapping(
-            value = "/list/{id}",
-            validators = {
-                    @Validator(values = "id", constraints = {
-                            @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
-                    })
-            })
-    public IHttpResponse<CategoryDTO> listById(Request request) throws ServiceException {
-       CategoryDTO category = this.getModel().listById(request);
-       // OK
-       return super.okHttpResponse(category, super.forwardTo("formListCategory"));
-    }
-
-    // Superclass method
-    protected <U> IHttpResponse<U> newHttpResponse(int status, U response, String nextPath) {
-        return HttpResponse.<U>newBuilder().statusCode(status).body(response).next(nextPath).build();
-    }
-
-    protected <U> IHttpResponse<U> okHttpResponse(U response, String nextPath) {
-        // Use newHttpResponse
-    }
-}
+```mermaid
+graph TD
+    A[🌐 Presentation] --> B[⚙️ Application]
+    B --> C[🎯 Domain]
+    C --> D[🔧 Infrastructure]
 ```
 
-## Some layouts
+## ✨ Key Features
 
-### Home Page
+- JWT Authentication with roles
+- Multi-level caching system  
+- Clean Architecture (106 classes)
+- Comprehensive testing (53 tests)
+- Rate limiting & security
+- Web scraping framework
 
-#### `/product/?page=1&limit=3&sort=id&order=asc`
+## 🛠️ Technology Stack
 
-![App home page](./images/homepage.png)
+| Component | Technology | Version |
+|-----------|------------|---------|
+| ☕ Language | Java | 17 |
+| 🗄️ ORM | Hibernate/JPA | 6.2.7.Final |
+| 🐘 Database | PostgreSQL | 42.5.4 |
+| 🔐 Security | JWT + Roles | Custom |
+| ⚡ Cache | EhCache | Multi-user |
+| 🧪 Testing | JUnit + Mockito | 5.9.2 |
 
-#### Tips:
+## 🚀 Getting Started
 
-- *Sorting*: `sort=<field>&order=<asc|desc>&page=<page>&limit=<size>`
-- *Searching*: `q=<query>&k=<field>`
+```bash
+# Clone the repository
+git clone https://github.com/m-feliciano/servlets.git
 
-Sample URLs:
+# Build and test
+mvn clean test
 
-- `/product/?page=1&limit=5&sort=id&order=desc`
-- `/product/?q=macbook+pro&k=name`
-
-Default values can be changed in the `app.properties` file.
-
-### Product
-
-#### `/product/{id}`
-
-![App product list page](./images/product-list.png)
-
-### Info Page
-
-[comment]: <> (Found on the web, author unknown)
-![Error](./images/cat_404.gif)
-
-## Packages
-
-```
-C:.
-├───main
-│   ├───java
-│   │   └───com
-│   │       └───dev
-│   │           └───servlet
-│   │               ├───builders 
-│   │               ├───controllers    (REST controllers)
-│   │               ├───dao            (Data Access Object)
-│   │               ├───dto            (Data Transfer Object)
-│   │               ├───filter         (Servlet filters)
-│   │               │   └───wrappers   (Request wrappers)
-│   │               ├───interfaces     (Contracts)
-│   │               ├───listeners      (Servlet listeners)
-│   │               ├───mapper         (Object mapper)
-│   │               ├───model          (Service classes)
-│   │               │   └───shared
-│   │               ├───pojo           (Plain Old Java Object)
-│   │               │   ├───enums
-│   │               │   └───records    (Immutable classes)
-│   │               ├───providers      (Service providers)
-│   │               └───utils          (Utility classes)
-│   ├───resources
-│   │   └───META-INF
-│   │       └───sql                 (Database scripts)
-│   └───webapp
-│       ├───assets
-│       │   └───images
-│       ├───css                    (CSS styles)
-│       ├───js
-│       ├───META-INF
-│       ├───web
-│       │   └───WEB-INF
-│       └───WEB-INF
-│           ├───fragments          (Reusable JSP fragments)
-│           ├───routes             (URL mappings)
-│           └───view               (JSP views)
-│               ├───components     (Reusable JSP components)
-│               │   └───buttons
-│               └───pages          (JSP pages)
-│                   ├───category
-│                   ├───inventory
-│                   ├───product
-│                   └───user
-└───test
-    └───java
-        └───servlets
-            └───auth
-
+# Deploy to Tomcat
+mvn clean package
 ```
 
-## Setup Instructions
+## 📖 Screenshots
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/m-feliciano/servlets.git
-    ```
-2. Navigate to the project directory:
-    ```sh
-    cd servlets
-    ```
-3. Build the project using Maven:
-    ```sh
-    mvn clean install
-    ```
-4. Create a new database in PostgreSQL:
-    ```docker
-   ## create network
-    docker network create -d bridge <network-name>
-    
-    ## run container (example)
-    docker run --name <container-name> \
-    --network=<network-name> -p 5432:5432 \
-    -e "POSTGRES_USER=<user>" \
-    -e "POSTGRES_PASSWORD=<password>" \
-    -d postgres
-    
-    ## exec into container
-    docker exec -it <container-name> psql -U postgres
-    ## create table
-    
-    ## etc
-    # The scripts to create the database are in the `resources/META-INF/sql` folder.
-    # The database connection is set in the `resources/META-INF/persistence.xml` file.
-    ```
+<div align="center">
+  <img src="images/homepage.png" alt="Application Homepage" width="80%">
+  <p><em>Homepage with product listing</em></p>
 
-5. Setting up the database:
-    - Run the scripts in the `resources/META-INF/sql` folder to create the tables and insert initial data.
-    - Update the `persistence.xml` file with your database credentials.
-    - Update the `app.properties` file as needed.
-      <br><br>
-6. Deploy the application to Tomcat:
-    - Install Tomcat 9 on your machine.
-    - Copy the generated WAR file to the Tomcat `webapps` directory.
-    - Start the Tomcat server.
-      <br><br>
-7. Usage Instructions
-    - Access the application at `<server>/<context-path>` (e.g., `http://localhost:8080/api/v1/login/form`).
+  <img src="images/product-list.png" alt="Product Management" width="80%">
+  <p><em>Product management interface</em></p>
+</div>
 
-## Notes
+## 📚 Documentation | Documentação
 
-***Note***: This project was initially created years ago to learn Java EE, core Servlet/JSP, and JPA. It has been
-updated to incorporate the latest Java features and best practices.
+### 🇺🇸 English Documentation
+- **[Complete Class Analysis](docs/en/COMPLETE_CLASS_ANALYSIS.md)** - Detailed analysis of all 106 classes
+- **[Relationship Diagrams](docs/en/RELATIONSHIP_DIAGRAMS.md)** - Visual architecture diagrams  
+- **[Project Summary](docs/en/PROJECT_SUMMARY.md)** - Executive summary and overview
 
-There is a lot of room for improvement,
-like refactoring the frontend joining the files into a single one using `JSP fragments`,
-and `JSTL` to render the content dynamically.
+### 🇧🇷 Documentação em Português  
+- **[Análise Completa de Classes](docs/pt-BR/ANALISE_COMPLETA_CLASSES.md)** - Análise detalhada das 106 classes
+- **[Diagramas de Relacionamentos](docs/pt-BR/DIAGRAMAS_RELACIONAMENTOS.md)** - Diagramas visuais da arquitetura
+- **[Resumo do Projeto](docs/pt-BR/RESUMO_PROJETO.md)** - Resumo executivo e visão geral
 
-[Back to top](#full-stack-java-web-application)
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.

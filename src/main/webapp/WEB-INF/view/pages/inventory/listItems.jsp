@@ -1,8 +1,8 @@
+<%@ page import="com.dev.servlet.domain.transfer.response.IServletResponse" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IServletResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -16,8 +16,8 @@
 <div class="main">
     <jsp:include page="/WEB-INF/view/components/search.jsp">
         <jsp:param name="placeholder" value="Search inventory"/>
-        <jsp:param name="action" value="${baseLink}/v1${ listInventory }"/>
-        <jsp:param name="onclear" value="${baseLink}/v1${ listInventory }"/>
+        <jsp:param name="action" value="${baseLink}${version}${ listInventory }"/>
+        <jsp:param name="onclear" value="${baseLink}${version}${ listInventory }"/>
     </jsp:include>
 
     <c:if test="${ empty items }">
@@ -50,17 +50,17 @@
                             <th class="w-7" scope="row">${ inventory.id }</th>
                             <td class="w-20">
                                 <a style="text-decoration: none; color: inherit;  padding: 2rem 0;"
-                                   href="${baseLink}/v1${ listProduct }/${ inventory.getProduct().getId() }"
+                                   href="${baseLink}${version}${ listProduct }/${ inventory.getProduct().getId() }"
                                    target="_blank">${ inventory.getProduct().getName() }</a>
                             </td>
                             <td class="w-10">${ inventory.quantity }</td>
                             <td class="w-25">${ inventory.description }</td>
                             <td class="w-10">${ parsedPrice }</td>
                             <td class="w-10">
-                                <a href="${baseLink}/v1${ listInventory }/${ inventory.id }" class="btn btn-auto btn-primary">
+                                <a href="${baseLink}${version}${ listInventory }/${ inventory.id }" class="btn btn-auto btn-primary">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <form action="${baseLink}/v1${ deleteItem }/${ inventory.id }" method="post" class="d-inline">
+                                <form action="${baseLink}${version}${ deleteItem }/${ inventory.id }" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-auto btn-danger"
                                             onclick="return confirm('Are you sure?')">
                                         <i class="bi bi-trash3"></i>
@@ -77,7 +77,7 @@
         </div>
     </c:if>
     <div class="d-flex flex-row-reverse mb20 mt-0">
-        <a type="button" href="${baseLink}/v1${ newItem }" class="btn btn-success">
+        <a type="button" href="${baseLink}${version}${ newItem }" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> New
         </a>
     </div>

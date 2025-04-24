@@ -1,5 +1,5 @@
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
+<%@ page import="com.dev.servlet.domain.transfer.response.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -7,7 +7,7 @@
 %>
 
 <div class="main">
-    <form action="${baseLink}/v1${ createProduct }" method="post">
+    <form action="${baseLink}${version}${ createProduct }" method="post">
         <div class="col-md-6">
             <div class="mb-3">
                 <label for="inputName" class="form-label">NAME</label>

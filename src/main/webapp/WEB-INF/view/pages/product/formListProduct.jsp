@@ -1,6 +1,6 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IHttpResponse" %>
+<%@ page import="com.dev.servlet.domain.transfer.response.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -8,8 +8,7 @@
 %>
 
 <fmt:formatNumber value="${product.price}" type="currency" minFractionDigits="2" var="parsedNumber"/>
-<fmt:parseDate value="${product.registerDate}" type="date" pattern="yyyy-MM-dd" var="parsedDate"/>
-<fmt:formatDate value="${parsedDate}" type="date" pattern="dd/MM/yyyy" var="stdDate"/>
+<fmt:formatDate value="${product.registerDate}" pattern="dd/MM/yyyy" var="stdDate"/>
 
 <title>Product: ${ product.name }</title>
 
@@ -53,7 +52,7 @@
             <div class="mb-3">
                 <label for="inputDescription" class="form-label">DESCRIPTION</label>
                 <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="Simple Description" readonly rows="4" cols="auto">
+                          placeholder="Simple Description" readonly rows="10" cols="auto">
                     ${ product.description }</textarea>
             </div>
             <c:if test="${ not empty product.url and not product.url eq '' }">
@@ -70,13 +69,13 @@
                     <jsp:param name="btnType" value="button"/>
                     <jsp:param name="btnClass" value="btn btn-light"/>
                     <jsp:param name="btnIcon" value="bi bi-arrow-left"/>
-                    <jsp:param name="btnOnclick" value="onclick='window.location.href=`${baseLink}/v1${ listProduct }`'"/>
+                    <jsp:param name="btnOnclick" value="onclick='window.location.href=`${baseLink}${version}${ listProduct }`'"/>
                     <jsp:param name="btnId" value="id='backButton'"/>
                 </jsp:include>
 
                 <span class="mr-2"></span>
 
-                <a type="button" href="${baseLink}/v1${ editProduct }/${ product.id }" class="btn btn-success">
+                <a type="button" href="${baseLink}${version}${ editProduct }/${ product.id }" class="btn btn-success">
                     Edit <i class="bi bi-pencil-square"></i>
                 </a>
             </div>
@@ -86,7 +85,7 @@
             <div class="mb-3">
                 <c:choose>
                     <c:when test="${ empty product.url }">
-                        <img src="<c:url value='/assets/no_image_available.png'/>"
+                        <img src="<c:url value='/resources/assets/no_image_available.png'/>"
                              class="img-thumbnail" alt="No available" width="60%" height="60%"/>
                     </c:when>
                     <c:otherwise>

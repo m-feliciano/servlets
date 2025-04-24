@@ -1,6 +1,6 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ page import="com.dev.servlet.interfaces.IServletResponse" %>
+<%@ page import="com.dev.servlet.domain.transfer.response.IServletResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
 
@@ -10,11 +10,10 @@
     request.setAttribute("product", servletResponse.getEntity("product"));
 %>
 
-<fmt:parseDate value="${product.registerDate}" type="date" pattern="yyyy-MM-dd" var="parsedDate"/>
-<fmt:formatDate value="${parsedDate}" type="date" pattern="dd/MM/yyyy" var="stdDate"/>
+<fmt:formatDate value="${product.registerDate}" pattern="dd/MM/yyyy" var="stdDate"/>
 
 <div class="main">
-    <form action="${baseLink}/v1${ updateProduct }/${product.id}" method="post">
+    <form action="${baseLink}${version}${ updateProduct }/${product.id}" method="post">
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">

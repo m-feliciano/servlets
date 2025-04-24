@@ -2,10 +2,10 @@
     <persistence-unit name="servletpu" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <class>com.dev.servlet.pojo.domain.Category</class>
-        <class>com.dev.servlet.pojo.domain.Inventory</class>
-        <class>com.dev.servlet.pojo.domain.Product</class>
-        <class>com.dev.servlet.pojo.domain.User</class>
+        <class>com.dev.servlet.domain.model.Category</class>
+        <class>com.dev.servlet.domain.model.Inventory</class>
+        <class>com.dev.servlet.domain.model.Product</class>
+        <class>com.dev.servlet.domain.model.User</class>
         <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 
         <properties>

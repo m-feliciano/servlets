@@ -1,29 +1,140 @@
 # Full-Stack Java Web Application
 
-This project is a comprehensive Java/JSP web application.
-It follows the Model-View-Controller (MVC) architecture and uses the Java EE stack.
-I've used the latest Java features and best practices to build this application.
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/m-feliciano/servlets)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/mit)
+[![Java](https://img.shields.io/badge/java-17-blue)](https://adoptopenjdk.net/)
+
+> **A complete Java EE web application with MVC architecture, authentication, security, caching, automated tests, and best practice examples.**
+
+---
+
+## Demo
+
+![App home page](./images/homepage.png)
+
+---
 
 ## Table of Contents
+- [About the Project](#about-the-project)
+- [Main Features](#main-features)
+- [Tech Stack](#tech-stack)
+- [How to Run Locally](#how-to-run-locally)
+- [Dev Section and Endpoints](#url-design-and-endpoints)
+- [Patterns and Architecture](#patterns-and-architecture)
+- [How to Contribute](#how-to-contribute)
+- [License](#license)
 
-- [Technology Stack](#tech-stack)
-- [URL Design](#url-design)
-- [Layout](#Some-layouts)
-- [Packages](#packages)
-- [Setup Instructions](#setup-instructions)
-- [Notes](#notes)
+---
+
+## About the Project
+
+A complete web system for management.
+Includes authentication, authorization, XSS security, password encryption,
+caching, pagination, sorting, automated tests, and extensible architecture.
+
+---
+
+## Main Features
+- Authentication and authorization with session control
+- Security filters (XSS, password encryption)
+- Data validation with custom annotations
+- Pagination, sorting, and search
+- In-memory cache per user
+- Unit and integration tests (JUnit, Mockito)
+- Structured logging
+- Layered and highly extensible architecture
+
+---
 
 ## Tech Stack
+- **Java 17**
+- **Servlet/JSP API**
+- **Hibernate/JPA**
+- **Tomcat 9**
+- **PostgreSQL**
+- **JUnit 5, Mockito**
+- **Lombok, SLF4J**
 
-- **Java (JDK 17)**: Core programming language.
-- **Hibernate (ORM)**: Simplifies database interactions.
-- **Tomcat 9 (Server)**: Web server and servlet container.
-- **PostgreSQL (Database)**: Open-source relational database management system.
-- **Criteria API**: Type-safe way to build database queries.
-- **Mockito**: For unit testing.
+---
 
-## URL Design
-### URL Components:
+## How to Run Locally
+
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/m-feliciano/servlets.git
+   cd servlets
+   ```
+2. **Configure the database:**
+   - Create a PostgreSQL database and adjust `resources/META-INF/persistence.xml`.
+   - Run the scripts in `resources/META-INF/sql`.
+3. **Build the project:**
+   ```sh
+   mvn clean install
+   ```
+4. **Deploy to Tomcat:**
+   - Copy the generated WAR to the `webapps` folder of Tomcat.
+   - Start Tomcat and access `http://localhost:8080/api/v1/login/form`.
+
+---
+
+## Dev Section and Endpoints
+
+- URLs follow the pattern: `/api/v1/{resource}/{action}`
+- Supports pagination, sorting, and search via query params
+- API versioning
+
+### Endpoints Table (Product Example)
+| Method | Endpoint                      | Description                |
+|--------|-------------------------------|----------------------------|
+| GET    | /api/v1/product/list          | List all products          |
+| GET    | /api/v1/product/list/{id}     | Product details            |
+| POST   | /api/v1/product/create        | Create a new product       |
+| POST   | /api/v1/product/update/{id}   | Update a product           |
+| POST   | /api/v1/product/delete/{id}   | Delete a product           |
+
+> See the section [Endpoints by Controller](#endpoints-by-controller) for the full list of endpoints.
+
+---
+
+## Patterns and Architecture
+- **MVC**: Clear separation between Controller, Model, DAO, DTO
+- **Dependency Injection (CDI)**
+- **Custom validation with annotations**
+- **Security filters (XSS, encryption)**
+- **In-memory cache per user**
+- **Generic pagination and sorting**
+- **Automated tests (JUnit, Mockito)**
+- **Structured logging (SLF4J)**
+
+---
+
+## How to Contribute
+1. Fork this repository
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'feat: my feature'`
+4. Push to your branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more details.
+
+---
+
+## FAQ
+
+**1. How to create a new service?**
+- Create DTO, Model, DAO, and Controller following the pattern of existing examples.
+- Annotate methods with `@RequestMapping` and use custom validation.
+
+**2. How to customize configuration?**
+- Edit `app.properties` to change cache, rate limit, etc.
+
+---
+
+## URL Components:
 - **`{context}`**: Application context path (e.g., `https://your-domain.com/api`).
 - **`{version}`**: API version (e.g., `v1`).
 - **`{path}`**: Controller path (e.g., `product`).
@@ -48,6 +159,57 @@ I've used the latest Java features and best practices to build this application.
 ### Notes:
 - Default values for query parameters can be configured in the `app.properties` file.
 - API versioning is included in the URL but not mapped to controllers. The default version is `v1`.
+
+## Endpoints by Controller
+
+### ProductController
+| Method | Endpoint                      | Authentication | Notes                        |
+|--------|-------------------------------|----------------|------------------------------|
+| GET    | /api/v1/product/list          | Yes            | List all products            |
+| GET    | /api/v1/product/list/{id}     | Yes            | Product details              |
+| POST   | /api/v1/product/create        | Yes            | Create a new product         |
+| POST   | /api/v1/product/update/{id}   | Yes            | Update a product             |
+| POST   | /api/v1/product/delete/{id}   | Yes            | Delete a product             |
+| GET    | /api/v1/product/new           | Yes            | New product form             |
+| GET    | /api/v1/product/edit/{id}     | Yes            | Edit product form            |
+
+### UserController
+| Method | Endpoint                  | Authentication | Notes                        |
+|--------|---------------------------|----------------|------------------------------|
+| POST   | /api/v1/user/update/{id}  | Yes            | Update user                  |
+| POST   | /api/v1/user/delete/{id}  | Yes (admin)    | Delete user (admin only)     |
+| POST   | /api/v1/user/registerUser | No             | Register new user            |
+| GET    | /api/v1/user/list/{id}    | Yes            | User details                 |
+
+### LoginController
+| Method | Endpoint                   | Authentication | Notes                        |
+|--------|----------------------------|----------------|------------------------------|
+| GET    | /api/v1/login/registerPage | No             | Registration form            |
+| GET    | /api/v1/login/form         | No             | Login form                   |
+| POST   | /api/v1/login/login        | No             | Perform login                |
+| POST   | /api/v1/login/logout       | Yes            | Perform logout               |
+
+### InventoryController
+| Method | Endpoint                      | Authentication | Notes                        |
+|--------|-------------------------------|----------------|------------------------------|
+| GET    | /api/v1/inventory/list        | Yes            | List all items               |
+| GET    | /api/v1/inventory/list/{id}   | Yes            | Item details                 |
+| POST   | /api/v1/inventory/create      | Yes            | Create new item              |
+| POST   | /api/v1/inventory/update/{id} | Yes            | Update item                  |
+| POST   | /api/v1/inventory/delete/{id} | Yes            | Delete item                  |
+| GET    | /api/v1/inventory/new         | Yes            | New item form                |
+| GET    | /api/v1/inventory/edit/{id}   | Yes            | Edit item form               |
+
+### CategoryController
+| Method | Endpoint                     | Authentication | Notes                        |
+|--------|------------------------------|----------------|------------------------------|
+| GET    | /api/v1/category/list        | Yes            | List all categories          |
+| GET    | /api/v1/category/list/{id}   | Yes            | Category details             |
+| POST   | /api/v1/category/create      | Yes            | Create new category          |
+| POST   | /api/v1/category/update/{id} | Yes            | Update category              |
+| POST   | /api/v1/category/delete/{id} | Yes            | Delete category              |
+| GET    | /api/v1/category/new         | Yes            | New category form            |
+| GET    | /api/v1/category/edit/{id}   | Yes            | Edit category form           |
 
 #### Example of controller
 
@@ -134,7 +296,7 @@ I've used the latest Java features and best practices to build this application.
    }
 ```
 
-#### Testing 
+#### Complex Test 
 
 ```java
    // ProductControllerTest.java
@@ -232,15 +394,71 @@ I've used the latest Java features and best practices to build this application.
    }
 ```
 
+
+## Folder Structure
+
+```plaintext
+servlet
+   ├───Auth
+   │   └───wrapper
+   ├───controller
+   │   └───base
+   ├───core
+   │   ├───builder
+   │   ├───impl
+   │   ├───interceptor
+   │   └───listener
+   ├───dto
+   ├───exception
+   ├───mapper
+   ├───model
+   │   ├───base
+   │   ├───impl
+   │   ├───pojo
+   │   │   ├───domain
+   │   │   ├───enums
+   │   │   └───records
+   │   └───shared
+   ├───persistence
+   │   ├───dao
+   │   │   └───base
+   │   └───impl
+   ├───util
+   └───validator
+
+   resources
+      │   ├───META-INF
+      │   │   └───sql
+      │   └───mockito-extensions
+      └───webapp
+          ├───assets
+          │   └───images
+          ├───css
+          ├───js
+          ├───META-INF
+          ├───web
+          │   └───WEB-INF
+          └───WEB-INF
+              ├───fragments
+              ├───routes
+              └───view
+                  ├───components
+                  │   └───buttons
+                  └───pages
+                      ├───category
+                      ├───inventory
+                      ├───product
+                      └───user
+   test
+     └───java
+         └───servlets
+             ├───auth
+             ├───controllers
+             ├───core
+             └───utils
+```
+
 ## Some layouts
-
-### Home Page
-
-#### `/product/?page=1&limit=3&sort=id&order=asc`
-
-![App home page](./images/homepage.png)
-
-Default values can be changed in the `app.properties` file.
 
 ### Product
 
@@ -253,72 +471,6 @@ Default values can be changed in the `app.properties` file.
 [comment]: <> (Found on the web, author unknown)
 ![Error](./images/cat_404.gif)
 
-## Packages
-
-```plaintext
-C:.
-├───main
-│   ├───java
-│   │   └───com
-│   │       └───dev
-│   │           └───servlet
-│   │               ├───Auth
-│   │               │   └───wrapper
-│   │               ├───controller
-│   │               │   └───base
-│   │               ├───core
-│   │               │   ├───builder
-│   │               │   ├───impl
-│   │               │   ├───interceptor
-│   │               │   └───listener
-│   │               ├───dto
-│   │               ├───exception
-│   │               ├───mapper
-│   │               ├───model
-│   │               │   ├───base
-│   │               │   ├───impl
-│   │               │   ├───pojo
-│   │               │   │   ├───domain
-│   │               │   │   ├───enums
-│   │               │   │   └───records
-│   │               │   └───shared
-│   │               ├───persistence
-│   │               │   ├───dao
-│   │               │   │   └───base
-│   │               │   └───impl
-│   │               ├───util
-│   │               └───validator
-│   ├───resources
-│   │   ├───META-INF
-│   │   │   └───sql
-│   │   └───mockito-extensions
-│   └───webapp
-│       ├───assets
-│       │   └───images
-│       ├───css
-│       ├───js
-│       ├───META-INF
-│       ├───web
-│       │   └───WEB-INF
-│       └───WEB-INF
-│           ├───fragments
-│           ├───routes
-│           └───view
-│               ├───components
-│               │   └───buttons
-│               └───pages
-│                   ├───category
-│                   ├───inventory
-│                   ├───product
-│                   └───user
-└───test
-    └───java
-        └───servlets
-            ├───auth
-            ├───controllers
-            ├───core
-            └───utils
-```
 
 ## Setup Instructions
 

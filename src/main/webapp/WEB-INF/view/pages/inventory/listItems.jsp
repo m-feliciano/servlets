@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.interfaces.IServletResponse" %>
+<%@ page import="com.dev.servlet.core.IServletResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%

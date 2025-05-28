@@ -1,9 +1,10 @@
 package com.dev.servlet.model.shared;
 
-import com.dev.servlet.model.InventoryModel;
-import com.dev.servlet.model.ProductModel;
-import com.dev.servlet.pojo.domain.Inventory;
-import com.dev.servlet.pojo.domain.Product;
+import com.dev.servlet.model.impl.InventoryModel;
+import com.dev.servlet.model.impl.ProductModel;
+import com.dev.servlet.model.pojo.domain.Inventory;
+import com.dev.servlet.model.pojo.domain.Product;
+import com.dev.servlet.model.pojo.domain.User;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -46,8 +47,8 @@ public class BusinessShared {
      * @param productId
      * @return {@linkplain Product}
      */
-    public Product getProductById(Long productId) {
+    public Product getProductById(Long productId, User user) {
         if (productId == null) return null;
-        return productModel.find(new Product(productId));
+        return productModel.find(new Product(productId, user));
     }
 }

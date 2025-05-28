@@ -4,6 +4,8 @@
 <c:set var="totalRecords" value="${param.totalRecords}"/>
 <c:set var="totalPages" value="${param.totalPages}"/>
 <c:set var="pageSize" value="${param.pageSize}"/>
+<c:set var="sort" value="${param.sort}"/>
+<c:set var="direction" value="${param.direction}"/>
 <c:set var="linkhref" value="${param.href}"/>
 
 <div class="row w-100 text-center">
@@ -14,7 +16,7 @@
                     <ul class="pagination justify-content-center">
                         <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
                             <a class="page-link" style="color: #343a40;" aria-label="Previous"
-                                href="${linkhref}?page=${currentPage - 1}&limit=${pageSize}">
+                                href="${linkhref}?page=${currentPage - 1}&limit=${pageSize}&sort=${sort}&order=${direction}">
                                 <i class="bi bi-arrow-left"></i>
                                 <span>Previous</span>
                             </a>
@@ -35,7 +37,7 @@
                                 <c:otherwise>
                                     <li class="page-item">
                                         <a class="page-link" style="color: #343a40;"
-                                           href="${linkhref}?page=${i}&limit=${pageSize}">${i}
+                                           href="${linkhref}?page=${i}&limit=${pageSize}&sort=${sort}&order=${direction}">${i}
                                         </a>
                                     </li>
                                 </c:otherwise>
@@ -44,7 +46,7 @@
 
                         <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
                             <a class="page-link" style="color: #343a40;" aria-label="Next"
-                               href="${linkhref}?page=${currentPage + 1}&limit=${pageSize}">
+                               href="${linkhref}?page=${currentPage + 1}&limit=${pageSize}&sort=${sort}&order=${direction}">
                                 <i class="bi bi-arrow-right"></i>
                                 <span>Next</span>
                             </a>

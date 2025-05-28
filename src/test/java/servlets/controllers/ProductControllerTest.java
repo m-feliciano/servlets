@@ -1,18 +1,21 @@
 package servlets.controllers;
 
-import com.dev.servlet.controllers.CategoryController;
-import com.dev.servlet.controllers.ProductController;
+import com.dev.servlet.controller.CategoryController;
+import com.dev.servlet.controller.ProductController;
+import com.dev.servlet.core.IHttpResponse;
+import com.dev.servlet.core.IServletResponse;
 import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.dto.ProductDTO;
-import com.dev.servlet.dto.ServiceException;
-import com.dev.servlet.interfaces.IHttpResponse;
-import com.dev.servlet.interfaces.IServletResponse;
-import com.dev.servlet.model.CategoryModel;
-import com.dev.servlet.model.ProductModel;
-import com.dev.servlet.pojo.Pageable;
-import com.dev.servlet.pojo.domain.Product;
-import com.dev.servlet.pojo.records.Query;
-import com.dev.servlet.pojo.records.Request;
+import com.dev.servlet.exception.ServiceException;
+import com.dev.servlet.model.impl.ProductModel;
+import com.dev.servlet.model.pojo.domain.Product;
+import com.dev.servlet.model.pojo.records.HttpResponseImpl;
+import com.dev.servlet.model.pojo.records.Query;
+import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.model.pojo.records.Sort;
+import com.dev.servlet.persistence.IPageable;
+import com.dev.servlet.persistence.impl.PageRequestImpl;
+import com.dev.servlet.persistence.impl.PageableImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,11 +26,11 @@ import org.mockito.MockitoAnnotations;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -42,9 +45,6 @@ class ProductControllerTest {
     @Mock
     private CategoryController categoryController;
 
-    @Mock
-    private CategoryModel categoryModel;
-
     @InjectMocks
     private ProductController productController;
 
@@ -56,11 +56,10 @@ class ProductControllerTest {
         MockitoAnnotations.openMocks(this);
         productController.setCategoryController(categoryController);
 
-        when(categoryController.getBaseModel()).thenReturn(categoryModel);
         when(request.token()).thenReturn("fakeToken");
         when(request.query()).thenReturn(mock(Query.class));
-        when(request.query().getPageable()).thenReturn(mock(Pageable.class));
-        when(request.query().getPageable().getRecords()).thenReturn(List.of(1L, 2L));
+        when(request.query().getPageRequest()).thenReturn(mock(PageRequestImpl.class));
+//        when(request.query().getPageRequestImpl().getRecords()).thenReturn(List.of(1L, 2L));
     }
 
     @Test
@@ -86,15 +85,15 @@ class ProductControllerTest {
             "It should return a 302 status code and the expected response.")
     void testForwardToCreateForm() {
         Collection<CategoryDTO> categories = List.of(new CategoryDTO());
-
-        when(categoryModel.getAllFromCache(anyString())).thenReturn(categories);
+        var categoryResponse = HttpResponseImpl.<Collection<CategoryDTO>>newBuilder().body(categories).build();
+        when(categoryController.list(any())).thenReturn(categoryResponse);
 
         IHttpResponse<Collection<CategoryDTO>> response = productController.forward(request);
 
         assertNotNull(response);
         assertEquals(302, response.statusCode());
         assertEquals(categories, response.body());
-        verify(categoryModel, times(1)).getAllFromCache(anyString());
+        verify(categoryController, times(1)).list(any());
     }
 
     @Test
@@ -105,39 +104,85 @@ class ProductControllerTest {
         ProductDTO productDTO = new ProductDTO();
         Collection<CategoryDTO> categories = List.of(new CategoryDTO());
 
+        var categoryResponse = HttpResponseImpl.<Collection<CategoryDTO>>newBuilder().body(categories).build();
+        when(categoryController.list(any())).thenReturn(categoryResponse);
         when(productModel.getById(request)).thenReturn(productDTO);
-        when(categoryModel.getAllFromCache(anyString())).thenReturn(categories);
 
         IServletResponse response = productController.edit(request);
 
         assertNotNull(response);
         verify(productModel, times(1)).getById(request);
-        verify(categoryModel, times(1)).getAllFromCache(anyString());
+        verify(categoryController, times(1)).list(any());
     }
 
     @Test
     @DisplayName(
-            "Test update method to save changes to a product. " +
+            "Test listProducts method to retrieve a list of products. " +
             "It should return a 200 status code and the expected response.")
+    @SuppressWarnings("unchecked")
     void testListProducts() {
-        Collection<Long> productIds = List.of(1L, 2L);
-        Collection<Product> products = List.of(new Product(), new Product());
-        BigDecimal totalPrice = BigDecimal.valueOf(100);
+        // Setup
+        Product filterMock = new Product("prod", "desc", null);
+        when(productModel.getEntity(any())).thenReturn(filterMock);
 
-        when(categoryModel.getAllFromCache(any())).thenReturn(List.of(new CategoryDTO()));
-        when(productModel.findAll(request)).thenReturn(productIds);
-        when(productModel.getAllPageable(any())).thenReturn(products);
-        when(productModel.calculateTotalPrice(productIds)).thenReturn(totalPrice);
+        var categories = List.of(new CategoryDTO());
+        var categoryResponse = HttpResponseImpl.<Collection<CategoryDTO>>newBuilder().body(categories).build();
+        when(categoryController.list(any())).thenReturn(categoryResponse);
 
+        var products = List.of(
+                new Product("prod1", "desc1", BigDecimal.valueOf(50)),
+                new Product("prod2", "desc2", BigDecimal.valueOf(50))
+        );
+
+        var pageableMock = PageableImpl.<Product>builder()
+                .content(products)
+                .currentPage(1)
+                .pageSize(2)
+                .sort(Sort.by("id").ascending())
+                .build();
+
+        when(productModel.getAllPageable(any())).thenReturn(pageableMock);
+        when(productModel.calculateTotalPriceFor(any())).thenReturn(BigDecimal.valueOf(100));
+
+        // Execution
         IServletResponse response = productController.list(request);
 
+        // Verification
         assertNotNull(response);
         assertEquals(200, response.statusCode());
 
-        verify(productModel, times(1)).findAll(request);
+        // Verify pageable content
+        var pageable = (IPageable<Product>) response.body().stream()
+                .filter(pair -> "pageable".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Pageable not found"))
+                .value();
+
+        long counter = StreamSupport.stream(pageable.getContent().spliterator(), false).count();
+        assertEquals(2, counter);
+
+        // Verify total price
+        BigDecimal totalPrice = (BigDecimal) response.body().stream()
+                .filter(pair -> "totalPrice".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Total price not found"))
+                .value();
+
+        assertEquals(BigDecimal.valueOf(100), totalPrice);
+
+        // Verify categories
+        var responseCategories = (Collection<CategoryDTO>) response.body().stream()
+                .filter(pair -> "categories".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Categories not found"))
+                .value();
+        assertEquals(categories, responseCategories);
+
+        // Verify interactions
+        verify(productModel, times(1)).getEntity(request);
         verify(productModel, times(1)).getAllPageable(any());
-        verify(productModel, times(1)).calculateTotalPrice(productIds);
-        verify(categoryModel, times(1)).getAllFromCache(anyString());
+        verify(productModel, times(1)).calculateTotalPriceFor(filterMock);
+        verify(categoryController, times(1)).list(any());
     }
 
     @Test

@@ -1,7 +1,7 @@
 package com.dev.servlet.mapper;
 
 import com.dev.servlet.dto.CategoryDTO;
-import com.dev.servlet.pojo.domain.Category;
+import com.dev.servlet.model.pojo.domain.Category;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

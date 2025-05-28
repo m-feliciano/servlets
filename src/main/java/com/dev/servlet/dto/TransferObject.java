@@ -1,6 +1,6 @@
 package com.dev.servlet.dto;
 
-import com.dev.servlet.interfaces.Identifier;
+import com.dev.servlet.model.Identifier;
 
 import java.io.Serializable;
 

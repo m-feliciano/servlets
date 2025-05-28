@@ -1,6 +1,6 @@
 package servlets.utils;
 
-import com.dev.servlet.utils.EndpointParser;
+import com.dev.servlet.util.EndpointParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

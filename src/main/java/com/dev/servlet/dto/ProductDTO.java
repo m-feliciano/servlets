@@ -1,6 +1,6 @@
 package com.dev.servlet.dto;
 
-import com.dev.servlet.pojo.domain.Product;
+import com.dev.servlet.model.pojo.domain.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

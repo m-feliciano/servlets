@@ -1,6 +1,6 @@
 package servlets.auth;
 
-import com.dev.servlet.filter.wrappers.SecurityRequestWrapper;
+import com.dev.servlet.auth.wrapper.SecurityRequestWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

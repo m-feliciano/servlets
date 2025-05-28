@@ -1,5 +1,5 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ page import="com.dev.servlet.interfaces.IServletResponse" %>
+<%@ page import="com.dev.servlet.core.IServletResponse" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
 <%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
@@ -7,7 +7,7 @@
 <%
     IServletResponse servletResponse = (IServletResponse) request.getAttribute("response");
     request.setAttribute("categories", servletResponse.getEntity("categories"));
-    request.setAttribute("products", servletResponse.getEntity("products"));
+    request.setAttribute("pageable", servletResponse.getEntity("pageable"));
     request.setAttribute("totalPrice", servletResponse.getEntity("totalPrice"));
 %>
 
@@ -21,11 +21,11 @@
         <jsp:param name="categories" value="${ categories }"/>
     </jsp:include>
 
-    <c:if test="${ empty products }">
+    <c:if test="${ !pageable.getContent().iterator().hasNext() }">
         <p>Products not found.</p>
     </c:if>
 
-    <c:if test="${ not empty products }">
+    <c:if test="${ pageable.getContent().iterator().hasNext() }">
         <div class="row">
             <div class="col-12">
                 <div class="table-responsive">
@@ -42,7 +42,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <c:forEach items="${ products }" var="product">
+                        <c:forEach items="${ pageable.getContent() }" var="product">
                             <fmt:formatNumber value="${product.price}" type="currency" minFractionDigits="2"
                                               var="parsedPrice"/>
                             <tr>
@@ -93,17 +93,20 @@
                             </tr>
                         </c:forEach>
                         </tbody>
-                        <caption class="pb-0 caption">${query.getPageable().getRecords().size()} records |
+                        <caption class="pb-0 caption">${pageable.getTotalElements()} records |
                             <fmt:formatNumber value="${totalPrice}" type="currency" minFractionDigits="2"/></caption>
                     </table>
                 </div>
             </div>
 
             <jsp:include page="/WEB-INF/view/components/pagination.jsp">
-                <jsp:param name="totalRecords" value="${query.getPageable().getRecords().size()}"/>
-                <jsp:param name="currentPage" value="${query.getPageable().getCurrentPage()}"/>
-                <jsp:param name="totalPages" value="${query.getPageable().getTotalPages()}"/>
-                <jsp:param name="pageSize" value="${query.getPageable().getPageSize()}"/>
+                <jsp:param name="totalRecords" value="${pageable.getTotalElements()}"/>
+                <jsp:param name="currentPage" value="${pageable.getCurrentPage()}"/>
+                <jsp:param name="totalPages" value="${pageable.getTotalPages()}"/>
+                <jsp:param name="pageSize" value="${pageable.getPageSize()}"/>
+                <jsp:param name="sort" value="${pageable.getSort().getField()}"/>
+                <jsp:param name="direction" value="${pageable.getSort().getDirection().getValue()}"/>
+
                 <jsp:param name="href" value="${baseLink}${version}${listProduct}"/>
             </jsp:include>
         </div>

@@ -1,7 +1,7 @@
 package com.dev.servlet.mapper;
 
 import com.dev.servlet.dto.UserDTO;
-import com.dev.servlet.pojo.domain.User;
+import com.dev.servlet.model.pojo.domain.User;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

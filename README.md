@@ -54,163 +54,181 @@ I've used the latest Java features and best practices to build this application.
 ```java
 
 // Example of a controller
-@Controller(path = "/product")
-public final class ProductController extends BaseController<Product, Long> {
+   @Controller(path = "/product")
+   public final class ProductController extends BaseController<Product, Long> {
+   
+      @RequestMapping(value = "/list")
+      public IServletResponse list(Request request) {
+         ProductModel model = this.getModel();
+         Product filter = model.getEntity(request);
 
-   @RequestMapping(value = "/list")
-   public IServletResponse list(Request request) {
-      ProductModel model = this.getModel();
+         request.query().getPageRequest().setFilter(filter);
 
-      Collection<Long> productIds = model.findAll(request);
-      request.query().getPageable().setRecords(productIds);
+         IPageable<Product> pageable = model.getAllPageable(request.query().getPageRequest());
 
-      Set<KeyPair> response = new HashSet<>();
-      if (!CollectionUtils.isEmpty(productIds)) {
+         Set<KeyPair> container = new HashSet<>();
+         container.add(new KeyPair("pageable", pageable));
 
-         Collection<ProductDTO> products = model.getAllPageable(request.query().getPageable())
-                 .stream()
-                 .map(ProductMapper::base)
-                 .toList();
+         if (pageable.getContent().iterator().hasNext()) {
+            BigDecimal totalPrice = model.calculateTotalPriceFor(filter);
+            container.add(new KeyPair("totalPrice", totalPrice));
+         }
 
-         BigDecimal totalPrice = model.calculateTotalPrice(productIds);
+         Collection<CategoryDTO> categories = categoryController.list(request.withToken()).body();
+         container.add(new KeyPair("categories", categories));
 
-         response.add(KeyPair.of("products", products));
-         response.add(KeyPair.of("totalPrice", totalPrice));
+         String next = super.forwardTo("listProducts");
+         return super.newServletResponse(container, next);
       }
-
-      Collection<CategoryDTO> categories = getCategoryModel().getAllFromCache(request.token());
-      response.add(KeyPair.of("categories", categories));
-
-      return super.newServletResponse(response, super.forwardTo("listProducts"));
    }
-}
 ```
 
 #### Endpoint register user
 
 ```java
-// POST ap1/v2/user/registerUser
-@RequestMapping(
-        value = "/registerUser",
-        method = RequestMethod.POST,
-        apiVersion = "v2",
-        requestAuth = false,
-        validators = {
-                @Validator(values = "login", constraints = {
-                        @Constraints(isEmail = true, message = "Login must be a valid email")
-                }),
-                @Validator(values = {"password", "confirmPassword"},
-                        constraints = {
-//                                @Constraints(minLength = 5, maxLength = 30, message = "Password must be between {0} and {1} characters")
-                                @Constraints(minLength = 5, message = "Password must have at least {0} characters"),
-                                @Constraints(maxLength = 30, message = "Password must have at most {0} characters"),
-                        }),
-        })
-public IHttpResponse<Void> register(Request request) throws ServiceException {
-   UserModel model = this.getModel();
-   model.register(request);
-   // Created
-   return super.newHttpResponse(201, null, "redirect:/api/v1/login/form");
-}
+    // POST ap1/v2/user/registerUser
+   @RequestMapping(
+           value = "/registerUser",
+           method = RequestMethod.POST,
+           apiVersion = "v2",
+           requestAuth = false,
+           validators = {
+                   @Validator(values = "login", constraints = {
+                           @Constraints(isEmail = true, message = "Login must be a valid email")
+                   }),
+                   @Validator(values = {"password", "confirmPassword"},
+                           constraints = {
+   //                                @Constraints(minLength = 5, maxLength = 30, message = "Password must be between {0} and {1} characters")
+                                   @Constraints(minLength = 5, message = "Password must have at least {0} characters"),
+                                   @Constraints(maxLength = 30, message = "Password must have at most {0} characters"),
+                           }),
+           })
+   public IHttpResponse<Void> register(Request request) {
+      UserModel model = this.getModel();
+      model.register(request);
+      return super.newHttpResponse(201, "redirect:/api/v1/login/form"); // Created
+   }
 ```
 
 #### Endpoint delete user (Only admin)
 
 ```java
    // POST /user/delete/{id}
-@RequestMapping(
-        value = "/delete/{id}",
-        method = RequestMethod.POST,
-        roles = { // Only admin can delete
-                PerfilEnum.ADMIN
-        },
-        validators = {
-                @Validator(values = "id", constraints = {
-                        @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
-                })
-        })
-public IHttpResponse<Void> delete(Request request) throws ServiceException {
-   UserModel model = this.getModel();
-   model.delete(request);
+   @RequestMapping(
+           value = "/delete/{id}",
+           method = RequestMethod.POST,
+           roles = { 
+                   PerfilEnum.ADMIN
+           },
+           validators = {
+                   @Validator(values = "id", constraints = {
+                           @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
+                   })
+           })
+   public IHttpResponse<Void> delete(Request request) {
+      UserModel model = this.getModel();
+      model.delete(request);
 
-   return HttpResponse.ofNext(super.forwardTo("formLogin"));
-}
-```
-
-#### Superclass methods
-
-```java Superclass methods
-   protected <U> IHttpResponse<U> newHttpResponse(int status, U response, String nextPath) {
-        return HttpResponse.<U>newBuilder().statusCode(status).body(response).next(nextPath).build();
-    }
-
-   protected <U> IHttpResponse<U> okHttpResponse(U response, String nextPath) {
-       // Uses newHttpResponse
-   }
-   
-   // Response container
-   protected IServletResponse newServletResponse(Set<KeyPair> response, String next) {
-       return new IServletResponse() {
-           @Override
-           public int statusCode() {
-               return 200;
-           }
-   
-           @Override
-           public Set<KeyPair> body() {
-               return response;
-           }
-   
-           @Override
-           public String next() {
-               return next;
-           }
-       };
+      String next = super.forwardTo("formLogin");
+      return HttpResponse.<Void>ok().next(next).build();
    }
 ```
-
 
 #### Testing 
 
-```java 
-
-    // ServletDispatcherTest.java
-   @Test
-   @DisplayName(
-           "Test dispatch method with a redirect response and a valid rate limit. " +
-           "It should send a redirect to the specified URL.")
-   void testDispatch_SendRedirect() throws Exception {
-      // Arrange
-      when(httpResponseMock.next()).thenReturn("redirect:/somewhere");
-   
-      try (MockedStatic<LocalExecutor> executorMockStatic = mockStatic(LocalExecutor.class);
-           MockedStatic<URIUtils> uriUtilsMockedStatic = mockStatic(URIUtils.class)) {
-   
-         when(httpExecutor.send(any(Request.class))).thenReturn(httpResponseMock);
-         executorMockStatic.when(LocalExecutor::newInstance).thenReturn(httpExecutor);
-         // Act
-         servletDispatcher.dispatch(httpRequest, httpResponse);
-         // Assert
-         verify(httpResponse).sendRedirect("/somewhere");
-      }
-   }
-
+```java
    // ProductControllerTest.java
-   @Test
-   @DisplayName(
-           "Test listById method to retrieve a product by ID. " +
-           "It should return a 200 status code and the expected response.")
-   void testListById() throws ServiceException {
-      ProductDTO productDTO = new ProductDTO();
-      productDTO.setId(1L);
+    @Test
+    @DisplayName(
+            "Test listProducts method to retrieve a list of products. " +
+            "It should return a 200 status code and the expected response.")
+    @SuppressWarnings("unchecked")
+    void testListProducts() {
+        // Setup
+        Product filterMock = new Product("prod", "desc", null);
+        when(productModel.getEntity(any())).thenReturn(filterMock);
+    
+        var categories = List.of(new CategoryDTO());
+        var categoryResponse = HttpResponseImpl.<Collection<CategoryDTO>>newBuilder().body(categories).build();
+        when(categoryController.list(any())).thenReturn(categoryResponse);
+    
+        var products = List.of(
+                new Product("prod1", "desc1", BigDecimal.valueOf(50)),
+                new Product("prod2", "desc2", BigDecimal.valueOf(50))
+        );
+    
+        var pageableMock = PageableImpl.<Product>builder()
+                .content(products)
+                .currentPage(1)
+                .pageSize(2)
+                .sort(Sort.by("id").ascending())
+                .build();
+    
+        when(productModel.getAllPageable(any())).thenReturn(pageableMock);
+        when(productModel.calculateTotalPriceFor(any())).thenReturn(BigDecimal.valueOf(100));
+    
+        // Execution
+        IServletResponse response = productController.list(request);
+    
+        // Verification
+        assertNotNull(response);
+        assertEquals(200, response.statusCode());
+    
+        // Verify pageable content
+        var pageable = (IPageable<Product>) response.body().stream()
+                .filter(pair -> "pageable".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Pageable not found"))
+                .value();
+    
+        long counter = StreamSupport.stream(pageable.getContent().spliterator(), false).count();
+        assertEquals(2, counter);
+    
+        // Verify total price
+        BigDecimal totalPrice = (BigDecimal) response.body().stream()
+                .filter(pair -> "totalPrice".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Total price not found"))
+                .value();
+    
+        assertEquals(BigDecimal.valueOf(100), totalPrice);
+    
+        // Verify categories
+        var responseCategories = (Collection<CategoryDTO>) response.body().stream()
+                .filter(pair -> "categories".equals(pair.key()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Categories not found"))
+                .value();
+        assertEquals(categories, responseCategories);
+    
+        // Verify interactions
+        verify(productModel, times(1)).getEntity(request);
+        verify(productModel, times(1)).getAllPageable(any());
+        verify(productModel, times(1)).calculateTotalPriceFor(filterMock);
+        verify(categoryController, times(1)).list(any());
+    }
+```
+
+### Creating a new Service
+```java
+   // 1. DTO
+   public class ExampleDTO { ... }
    
-      when(productModel.getById(request)).thenReturn(productDTO);
+   // 2. Entidade
+   public class Example extends Identifier<Long> { ... }
    
-      IHttpResponse<ProductDTO> response = productController.listById(request);
-      assertNotNull(response);
-      assertEquals(200, response.statusCode());
-      assertEquals(productDTO, response.body());
-      verify(productModel, times(1)).getById(request);
+   // 3. DAO
+   public class ExampleDAO extends BaseDAO<Example, Long> { ... }
+   
+   // 4. Model
+   public class ExampleModel extends BaseModel<Example, Long> { ... }
+   
+   // 5. Controller
+   @Controller(path = "/example")
+   public class ExampleController extends BaseController<Example, Long> {
+       @RequestMapping(value = "/create", method = RequestMethod.POST)
+       public IHttpResponse<Void> create(Request request) { ... }
+       // other methods...
    }
 ```
 
@@ -237,33 +255,43 @@ Default values can be changed in the `app.properties` file.
 
 ## Packages
 
-```
+```plaintext
+C:.
 ├───main
 │   ├───java
 │   │   └───com
 │   │       └───dev
 │   │           └───servlet
-│   │               ├───builders
-│   │               ├───controllers    (Controllers)
-│   │               │   └───router 
-│   │               ├───dao            (Data Access Object)
-│   │               ├───dto            (Data Transfer Object)
-│   │               ├───filter         (Servlet Filter)
-│   │               │   └───wrappers   (Request and Response Wrappers)
-│   │               ├───interfaces     (Contracts)
-│   │               ├───listeners 
-│   │               ├───mapper         (Object Mapper)
-│   │               ├───model          (Model)
-│   │               │   └───shared 
-│   │               ├───pojo           (Plain Old Java Object)
-│   │               │   ├───domain     (Domain Classes)
-│   │               │   ├───enums
-│   │               │   └───records    (Immutable Data Classes)
-│   │               ├───providers      (Services and Providers)
-│   │               └───utils          (Utility Classes)
+│   │               ├───Auth
+│   │               │   └───wrapper
+│   │               ├───controller
+│   │               │   └───base
+│   │               ├───core
+│   │               │   ├───builder
+│   │               │   ├───impl
+│   │               │   ├───interceptor
+│   │               │   └───listener
+│   │               ├───dto
+│   │               ├───exception
+│   │               ├───mapper
+│   │               ├───model
+│   │               │   ├───base
+│   │               │   ├───impl
+│   │               │   ├───pojo
+│   │               │   │   ├───domain
+│   │               │   │   ├───enums
+│   │               │   │   └───records
+│   │               │   └───shared
+│   │               ├───persistence
+│   │               │   ├───dao
+│   │               │   │   └───base
+│   │               │   └───impl
+│   │               ├───util
+│   │               └───validator
 │   ├───resources
-│   │   └───META-INF
-│   │       └───sql                    (SQL Scripts)
+│   │   ├───META-INF
+│   │   │   └───sql
+│   │   └───mockito-extensions
 │   └───webapp
 │       ├───assets
 │       │   └───images
@@ -273,12 +301,12 @@ Default values can be changed in the `app.properties` file.
 │       ├───web
 │       │   └───WEB-INF
 │       └───WEB-INF
-│           ├───fragments              (JSP Fragments)
-│           ├───routes                 (JSP Routes)
+│           ├───fragments
+│           ├───routes
 │           └───view
-│               ├───components         (Reusable Components)
+│               ├───components
 │               │   └───buttons
-│               └───pages              (JSP Pages)
+│               └───pages
 │                   ├───category
 │                   ├───inventory
 │                   ├───product
@@ -286,7 +314,10 @@ Default values can be changed in the `app.properties` file.
 └───test
     └───java
         └───servlets
-            └───auth
+            ├───auth
+            ├───controllers
+            ├───core
+            └───utils
 ```
 
 ## Setup Instructions

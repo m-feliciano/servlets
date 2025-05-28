@@ -3,7 +3,6 @@ package com.dev.servlet.model.impl;
 import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.ProductMapper;
-import com.dev.servlet.model.Identifier;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.domain.Inventory;
@@ -24,6 +23,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
 
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
+
 /**
  * Product Business
  * <p>
@@ -39,6 +40,7 @@ public class ProductModel extends BaseModel<Product, Long> {
     public static final String DESCRIPTION = "description";
     public static final String NAME = "name";
     public static final String CATEGORY = "category";
+    public static final int ERROR_CODE_404 = 404;
 
     private BusinessShared businessShared;
 
@@ -57,7 +59,7 @@ public class ProductModel extends BaseModel<Product, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<ProductDTO> getTransferClass() {
         return ProductDTO.class;
     }
 
@@ -130,10 +132,11 @@ public class ProductModel extends BaseModel<Product, Long> {
         log.trace("");
 
         Product filter = getEntity(request);
+        Optional<Product> optional = this.findById(filter);
 
-        Optional<Product> optProduct = this.findById(filter);
-        Product product = optProduct.orElseThrow(() -> new404NotFoundException(filter.getId()));
-        return ProductMapper.full(product);
+        throwIfTrue(optional.isEmpty(), ERROR_CODE_404, "Product not found.");
+
+        return ProductMapper.full(optional.get());
     }
 
     /**
@@ -146,9 +149,11 @@ public class ProductModel extends BaseModel<Product, Long> {
         log.trace("");
 
         Product productRequest = getEntity(request);
-        Optional<Product> optProduct = this.findById(productRequest);
-        var product = optProduct.orElseThrow(() -> new404NotFoundException(productRequest.getId()));
+        Optional<Product> optional = this.findById(productRequest);
 
+        throwIfTrue(optional.isEmpty(), ERROR_CODE_404, "Product not found.");
+
+        Product product = optional.get();
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
         product.setPrice(productRequest.getPrice());
@@ -170,9 +175,11 @@ public class ProductModel extends BaseModel<Product, Long> {
 
         Product productRequest = getEntity(request);
 
-        Optional<Product> optProduct = this.findById(productRequest);
-        Product product = optProduct.orElseThrow(() -> new404NotFoundException(productRequest.getId()));
+        Optional<Product> optional = this.findById(productRequest);
 
+        throwIfTrue(optional.isEmpty(), ERROR_CODE_404, "Product not found.");
+
+        Product product = optional.get();
         Inventory inventory = new Inventory();
         inventory.setUser(productRequest.getUser());
         inventory.setProduct(product);

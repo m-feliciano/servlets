@@ -1,7 +1,7 @@
 package com.dev.servlet.validator;
 
+import com.dev.servlet.adapter.RequestMapping;
 import com.dev.servlet.exception.ServiceException;
-import com.dev.servlet.core.RequestMapping;
 import com.dev.servlet.model.pojo.domain.User;
 import com.dev.servlet.model.pojo.enums.RoleType;
 import com.dev.servlet.model.pojo.records.Request;
@@ -14,8 +14,15 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.dev.servlet.util.CryptoUtils.isValidToken;
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
+
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class RequestValidator {
+
+    public static final String PERMISSION_ERROR = "User does not have permission to access this endpoint";
+    public static final String API_NOT_IMPLEMENTED_ERROR = "API Not implemented";
+    public static final String AUTHENTICATION_REQUIRED = "Authentication required.";
 
     public static void validate(EndpointParser endpoint, RequestMapping mapping, Request request) throws ServiceException {
         validateMethod(request.method(), mapping);
@@ -33,16 +40,14 @@ public final class RequestValidator {
         User user = CryptoUtils.getUser(request.token());
 
         for (RoleType role : roles) {
-            if (!user.hasRole(role)) {
-                throw ServiceException.badRequest("User does not have permission to access this endpoint");
-            }
+            boolean userDoesntHavePermission = !user.hasRole(role);
+            throwIfTrue(userDoesntHavePermission, 403, PERMISSION_ERROR);
         }
     }
 
     private static void validateApiVersion(String apiVersion, RequestMapping mapping) throws ServiceException {
-        if (!mapping.apiVersion().equals(apiVersion)) {
-            throw ServiceException.badRequest("API Not implemented");
-        }
+        boolean shouldThrow = !mapping.apiVersion().equals(apiVersion);
+        throwIfTrue(shouldThrow, 400, API_NOT_IMPLEMENTED_ERROR);
     }
 
     private static void validateConstraints(Validator[] validators, Request request) throws ServiceException {
@@ -50,9 +55,11 @@ public final class RequestValidator {
 
         for (Validator validator : validators) {
             for (String value : validator.values()) {
-                String parameterValue = request.getParameter(value);
+                var constraintValidator = new ConstraintValidator(validator.constraints());
 
-                List<String> errors = new ConstraintValidator(validator.constraints()).validate(parameterValue);
+                String parameter = request.getParameter(value);
+
+                List<String> errors = constraintValidator.validate(parameter);
                 if (!CollectionUtils.isEmpty(errors)) {
                     resultErrors.addAll(errors);
                 }
@@ -60,19 +67,17 @@ public final class RequestValidator {
         }
 
         if (!CollectionUtils.isEmpty(resultErrors)) {
-            throw ServiceException.badRequest(String.join("\n", resultErrors));
+            throw new ServiceException(HttpServletResponse.SC_BAD_REQUEST, String.join("\n", resultErrors));
         }
     }
 
     private static void validateMethod(String method, RequestMapping mapping) throws ServiceException {
-        if (!mapping.method().getMethod().equals(method)) {
-            throw ServiceException.badRequest("Method not allowed. Expected: " + mapping.method() + ", but got: " + method);
-        }
+        boolean methodNotMatch = !mapping.method().getMethod().equals(method);
+        throwIfTrue(methodNotMatch, 405, "Method not allowed. Expected: " + mapping.method() + ", but got: " + method);
     }
 
     private static void validateAuth(String token, RequestMapping mapping) throws ServiceException {
-        if (mapping.requestAuth() && (token == null || token.isEmpty())) {
-            throw new ServiceException(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required.");
-        }
+        boolean tokenInvalid = mapping.requestAuth() && !isValidToken(token);
+        throwIfTrue(tokenInvalid, 401, AUTHENTICATION_REQUIRED);
     }
 }

@@ -1,8 +1,6 @@
 package com.dev.servlet.auth;
 
-import com.dev.servlet.dto.UserDTO;
-import com.dev.servlet.core.IServletDispatcher;
-import com.dev.servlet.util.CryptoUtils;
+import com.dev.servlet.adapter.IServletDispatcher;
 import com.dev.servlet.util.EndpointParser;
 import com.dev.servlet.util.PropertiesUtil;
 import lombok.NoArgsConstructor;
@@ -19,6 +17,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+
+import static com.dev.servlet.util.CryptoUtils.isValidToken;
 
 /**
  * Authentication filter to check user authorization for accessing services.
@@ -52,27 +52,21 @@ public class Auth implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        UserDTO user = (UserDTO) request.getSession().getAttribute(USER);
-        String token = user != null ? user.getToken() : null;
+        String token = (String) request.getSession().getAttribute("token");
 
-        if (isAuthorizedRequest(request, token)) {
-            log.debug("Access to the service: {}, authorized", request.getRequestURI());
-            dispatcher.dispatch(request, response);
-        } else {
+        if (!isValidToken(token) && !isAuthorizedRequest(request)) {
             log.warn("Unauthorized access to the service: {}, redirecting to login page", request.getRequestURI());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.sendRedirect(PropertiesUtil.getProperty(LOGINPAGE));
+            redirectToLogin(response);
+            return;
         }
+
+        log.debug("Access to the service: {}, authorized", request.getRequestURI());
+        dispatcher.dispatch(request, response);
     }
 
-    /**
-     * Checks if the token is valid.
-     *
-     * @param token the session token
-     * @return true if the token is valid, false otherwise
-     */
-    private boolean isValidToken(String token) {
-        return token != null && CryptoUtils.verifyToken(token);
+    private void redirectToLogin(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.sendRedirect(PropertiesUtil.getProperty(LOGINPAGE));
     }
 
     /**
@@ -81,9 +75,7 @@ public class Auth implements Filter {
      * @param request the HTTP request
      * @return true if the action is authorized, false otherwise
      */
-    private boolean isAuthorizedRequest(HttpServletRequest request, String token) {
-        if (isValidToken(token)) return true;
-
+    private boolean isAuthorizedRequest(HttpServletRequest request) {
         var parser = EndpointParser.of(request.getServletPath());
         String service = parser.getService();
         String serviceName = parser.getServiceName();

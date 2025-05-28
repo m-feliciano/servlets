@@ -10,7 +10,7 @@
 
     <listener>
         <listener-class>
-            com.dev.servlet.core.listener.ContextListener
+            com.dev.servlet.adapter.listener.ContextListener
         </listener-class>
     </listener>
 

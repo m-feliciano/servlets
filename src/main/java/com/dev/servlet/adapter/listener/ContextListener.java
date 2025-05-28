@@ -1,6 +1,7 @@
-package com.dev.servlet.core.listener;
+package com.dev.servlet.adapter.listener;
 
 import com.dev.servlet.util.BeanUtil;
+import com.dev.servlet.util.CacheUtils;
 import com.dev.servlet.util.PropertiesUtil;
 
 import javax.servlet.ServletContextEvent;
@@ -22,7 +23,7 @@ public class ContextListener implements ServletContextListener {
      */
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
-        // Empty method
+        CacheUtils.close();
     }
 
     /**

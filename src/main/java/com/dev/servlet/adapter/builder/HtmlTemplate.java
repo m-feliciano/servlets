@@ -1,4 +1,4 @@
-package com.dev.servlet.core.builder;
+package com.dev.servlet.adapter.builder;
 
 import lombok.Builder;
 

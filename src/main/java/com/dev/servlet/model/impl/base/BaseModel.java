@@ -1,10 +1,10 @@
 package com.dev.servlet.model.impl.base;
 
-import com.dev.servlet.exception.ServiceException;
+import com.dev.servlet.dto.TransferObject;
 import com.dev.servlet.model.ICrudRepository;
 import com.dev.servlet.model.Identifier;
+import com.dev.servlet.model.Mapper;
 import com.dev.servlet.model.pojo.domain.User;
-import com.dev.servlet.model.pojo.records.KeyPair;
 import com.dev.servlet.model.pojo.records.Request;
 import com.dev.servlet.persistence.IPageRequest;
 import com.dev.servlet.persistence.IPageable;
@@ -19,6 +19,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +37,7 @@ import java.util.Optional;
 @Getter(AccessLevel.PROTECTED)
 @Setter(AccessLevel.PROTECTED)
 @NoArgsConstructor
+@SuppressWarnings("unchecked")
 public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepository<T, K> {
 
     protected BaseDAO<T, K> baseDAO;
@@ -74,7 +76,7 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
         baseDAO.delete(object);
     }
 
-    public Collection<K> findAllOnlyIds(T object) {
+    protected Collection<K> findAllOnlyIds(T object) {
         return baseDAO.findAllOnlyIds(object);
     }
 
@@ -82,7 +84,7 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
     public IPageable<T> getAllPageable(IPageRequest<T> pageRequest) {
         long totalCount = baseDAO.count(pageRequest);
 
-        Iterable<T> resultSet = List.of();
+        Iterable<T> resultSet =  Collections.emptyList();
         if (totalCount > pageRequest.getFirstResult()) {
             resultSet = baseDAO.getAllPageable(pageRequest);
         }
@@ -97,11 +99,27 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
     }
 
     /**
+     * Get all results with pagination and map to another type
+     *
+     * @param pageRequest {@linkplain IPageRequest}
+     * @param mapper      {@linkplain Mapper} to convert the entity to another type
+     * @return {@linkplain IPageable} with the results mapped to another type
+     */
+    public <U> IPageable<U> getAllPageable(IPageRequest<T> pageRequest, Mapper<T, U> mapper) {
+
+        IPageable<T> page = getAllPageable(pageRequest);
+
+        var content = ((List<T>) page.getContent()).stream().map(mapper::map).toList();
+
+        return PageableImpl.cloneOf(page, content);
+    }
+
+    /**
      * Retrieve the transfer class
      *
      * @return {@linkplain Class} of {@linkplain Identifier} type {@linkplain K}
      */
-    protected abstract Class<? extends Identifier<K>> getTransferClass();
+    protected abstract Class<? extends TransferObject<K>> getTransferClass();
 
     /**
      * Convert the object to the entity
@@ -109,7 +127,7 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @param object the object to be converted
      * @return {@linkplain T} the entity
      */
-    protected abstract T toEntity(Object object);
+    protected abstract <J> T toEntity(J object);
 
     protected User getUser(String token) {
         return token != null ? CryptoUtils.getUser(token) : null;
@@ -123,11 +141,8 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @author marcelo.feliciano
      */
     protected T getEntity(Request request) {
-        Object transferObject = getTransferObject(request);
-
-        return Optional.ofNullable(transferObject)
-                .map(this::toEntity)
-                .orElse(null);
+        TransferObject<K> object = getTransferObject(request);
+        return Optional.ofNullable(object).map(this::toEntity).orElse(null);
     }
 
     /**
@@ -137,54 +152,12 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @return {@linkplain T} the entity
      * @author marcelo.feliciano
      */
-    protected Object getTransferObject(Request request) {
-        var optIdentifier = ClassUtil.createInstance(getTransferClass());
+    protected <R extends TransferObject<K>> R getTransferObject(Request request) {
+        var optional = ClassUtil.createInstance(getTransferClass());
+        if (optional.isEmpty()) return null;
 
-        return optIdentifier
-                .map(entity -> fillObjectData(entity, request.id(), request.body()))
-                .orElse(null);
-    }
-
-    /**
-     * Convert the transfer object to the entity
-     *
-     * @param object     the transfer object {@linkplain U}
-     * @param id         the entity id
-     * @param parameters {@linkplain List} of {@linkplain KeyPair}
-     * @param <U>        the transfer object
-     * @return {@linkplain Identifier} of {@linkplain K}-
-     * @author marcelo.feliciano
-     */
-    private <U extends Identifier<K>> Identifier<K> fillObjectData(U object, String id, List<KeyPair> parameters) {
-        if (id != null) {
-            Class<K> typeK = ClassUtil.extractType(this.getClass(), 2);
-            K objectK = ClassUtil.castWrapper(typeK, id);
-            object.setId(objectK);
-        }
-
-        ClassUtil.fillObject(object, parameters);
-        return object;
-    }
-
-    /**
-     * Create a new service exception
-     *
-     * @param statusCode the status code
-     * @param id   the entity id
-     * @return {@linkplain ServiceException}
-     */
-    protected ServiceException newServiceExceptionOf(int statusCode, Object id) {
-        var className = ClassUtil.extractType(this.getClass(), 1).getSimpleName();
-        return new ServiceException(statusCode, String.format("%s with id %s not found.", className, id));
-    }
-
-    /**
-     * Create a new 404 service exception
-     *
-     * @param id the entity id
-     * @return {@linkplain ServiceException}
-     */
-    protected ServiceException new404NotFoundException(Object id) {
-        return newServiceExceptionOf(404, id);
+        TransferObject<K> object = optional.get();
+        ClassUtil.fillObject(object, request.body());
+        return (R) object;
     }
 }

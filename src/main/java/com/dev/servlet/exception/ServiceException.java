@@ -4,8 +4,6 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletResponse;
-
 @Getter
 public class ServiceException extends Exception {
 
@@ -13,10 +11,6 @@ public class ServiceException extends Exception {
 
     private final String message;
     private final int code;
-
-    public static ServiceException badRequest(String message) {
-        return new ServiceException(HttpServletResponse.SC_BAD_REQUEST, message);
-    }
 
     public ServiceException(Integer code, String message) {
         this.message = message;

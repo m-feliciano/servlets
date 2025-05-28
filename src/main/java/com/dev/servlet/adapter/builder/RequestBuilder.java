@@ -1,4 +1,4 @@
-package com.dev.servlet.core.builder;
+package com.dev.servlet.adapter.builder;
 
 import com.dev.servlet.model.pojo.records.KeyPair;
 import com.dev.servlet.model.pojo.records.Query;

@@ -1,4 +1,4 @@
-package com.dev.servlet.core;
+package com.dev.servlet.adapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

@@ -1,18 +1,17 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.model.Identifier;
-import com.dev.servlet.persistence.dao.InventoryDAO;
 import com.dev.servlet.dto.InventoryDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.InventoryMapper;
 import com.dev.servlet.model.impl.base.BaseModel;
-import com.dev.servlet.model.shared.BusinessShared;
 import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.domain.Inventory;
 import com.dev.servlet.model.pojo.domain.Product;
 import com.dev.servlet.model.pojo.enums.Status;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.model.shared.BusinessShared;
+import com.dev.servlet.persistence.dao.InventoryDAO;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +21,8 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
 
 /**
  * Inventory business.
@@ -58,7 +59,7 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<InventoryDTO> getTransferClass() {
         return InventoryDTO.class;
     }
 
@@ -116,9 +117,8 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
         Inventory inventory = this.getEntity(request);
 
         Product product = businessShared.getProductById(inventory.getProduct().getId(), inventory.getUser());
-        if (product == null) {
-            throw ServiceException.badRequest("Can't find product ID: " + inventory.getProduct().getId());
-        }
+
+        throwIfTrue(product == null, 400, "Can't find product ID: " + inventory.getProduct().getId());
 
         inventory.setStatus(Status.ACTIVE.getValue());
         inventory.setProduct(product);
@@ -149,9 +149,12 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
         log.trace("");
 
         var inventory = this.getEntity(request);
-        var optInventoryDTO = this.findById(inventory).map(InventoryMapper::full);
+        var optional = this.findById(inventory).map(InventoryMapper::full);
 
-        return optInventoryDTO.orElseThrow(() -> new404NotFoundException(request.id()));
+        throwIfTrue(optional.isEmpty(), 404, "Inventory not found for ID: " + request.id());
+
+        return optional.get();
+
     }
 
     /**
@@ -163,18 +166,17 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
     public InventoryDTO update(Request request) throws ServiceException {
         log.trace("");
 
-        Inventory inventoryReq = this.getEntity(request);
+        Inventory entity = this.getEntity(request);
 
-        Product product = businessShared.getProductById(inventoryReq.getProduct().getId(), inventoryReq.getUser());
-        if (product == null) {
-            throw ServiceException.badRequest("Can't find product ID: " + inventoryReq.getProduct().getId());
-        }
+        Product product = businessShared.getProductById(entity.getProduct().getId(), entity.getUser());
+        throwIfTrue(product == null, 400, "Can't find product ID: " + entity.getProduct().getId());
 
-        Optional<Inventory> optional = this.findById(inventoryReq);
-        Inventory inventory = optional.orElseThrow(() -> new404NotFoundException(request.id()));
+        Optional<Inventory> optional = this.findById(entity);
+        throwIfTrue(optional.isEmpty(), 404, "Inventory not found for ID: " + request.id());
 
-        inventory.setDescription(inventoryReq.getDescription());
-        inventory.setQuantity(inventoryReq.getQuantity());
+        Inventory inventory = optional.get();
+        inventory.setDescription(entity.getDescription());
+        inventory.setQuantity(entity.getQuantity());
         inventory.setStatus(Status.ACTIVE.getValue());
         inventory.setProduct(product);
 

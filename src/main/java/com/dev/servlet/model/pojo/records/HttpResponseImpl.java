@@ -1,6 +1,6 @@
 package com.dev.servlet.model.pojo.records;
 
-import com.dev.servlet.core.IHttpResponse;
+import com.dev.servlet.adapter.IHttpResponse;
 import lombok.Builder;
 
 import java.util.Set;
@@ -33,10 +33,6 @@ public record HttpResponseImpl<T>(int statusCode, T body, String next, Set<Strin
     }
 
     public static <U> HttpResponseImpl.HttpResponseImplBuilder<U> ok() {
-        return HttpResponseImpl.<U>newBuilder()
-                .statusCode(200)
-                .body(null)
-                .next(null)
-                .errors(null);
+        return HttpResponseImpl.<U>newBuilder().statusCode(200);
     }
 }

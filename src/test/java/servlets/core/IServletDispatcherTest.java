@@ -1,12 +1,12 @@
 package servlets.core;
 
-import com.dev.servlet.core.IServletDispatcher;
-import com.dev.servlet.core.builder.RequestBuilder;
-import com.dev.servlet.core.IHttpExecutor;import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.IRateLimiter;
+import com.dev.servlet.adapter.IServletDispatcher;
+import com.dev.servlet.adapter.builder.RequestBuilder;
+import com.dev.servlet.adapter.IHttpExecutor;import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.IRateLimiter;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.core.impl.HttpExecutorImpl;
-import com.dev.servlet.core.impl.ServletDispatcherImpl;
+import com.dev.servlet.adapter.impl.HttpExecutorImpl;
+import com.dev.servlet.adapter.impl.ServletDispatcherImpl;
 import com.dev.servlet.util.URIUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,4 +1,4 @@
-package com.dev.servlet.core;
+package com.dev.servlet.adapter;
 
 import com.dev.servlet.validator.Validator;
 import com.dev.servlet.model.pojo.enums.RoleType;

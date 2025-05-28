@@ -1,6 +1,6 @@
-package com.dev.servlet.core.interceptor;
+package com.dev.servlet.adapter.interceptor;
 
-import com.dev.servlet.core.LogExecutionTime;
+import com.dev.servlet.adapter.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 

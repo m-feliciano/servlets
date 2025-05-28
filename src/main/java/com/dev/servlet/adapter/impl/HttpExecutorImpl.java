@@ -1,11 +1,11 @@
-package com.dev.servlet.core.impl;
+package com.dev.servlet.adapter.impl;
 
 import com.dev.servlet.controller.base.BaseRouterController;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.core.IHttpExecutor;
-import com.dev.servlet.core.IHttpResponse;
+import com.dev.servlet.adapter.IHttpExecutor;
+import com.dev.servlet.adapter.IHttpResponse;
 import com.dev.servlet.util.BeanUtil;
 import com.dev.servlet.util.EndpointParser;
 import lombok.NoArgsConstructor;
@@ -38,8 +38,8 @@ public class HttpExecutorImpl<J> implements IHttpExecutor<J> {
         try {
             var parser = EndpointParser.of(request.endpoint());
 
-            BaseRouterController routerController = resolveController(parser);
-            return routerController.route(parser, request);
+            BaseRouterController router = resolveController(parser);
+            return router.route(parser, request);
         } catch (Exception e) {
             return handleException(e);
         }
@@ -55,7 +55,9 @@ public class HttpExecutorImpl<J> implements IHttpExecutor<J> {
         try {
             return (BaseRouterController) BeanUtil.getResolver().getService(endpoint.getService());
         } catch (Exception e) {
-            throw ServiceException.badRequest("Error resolving service method for path: " + endpoint.getService());
+            String message = "Error resolving service method for path: " + endpoint.getService();
+            log.error(message, e);
+            throw new ServiceException(HttpServletResponse.SC_BAD_REQUEST, message);
         }
     }
 

@@ -1,7 +1,5 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.model.Identifier;
-import com.dev.servlet.persistence.dao.CategoryDAO;
 import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.CategoryMapper;
@@ -10,7 +8,8 @@ import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.enums.Status;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.util.CacheUtil;
+import com.dev.servlet.persistence.dao.CategoryDAO;
+import com.dev.servlet.util.CacheUtils;
 import com.dev.servlet.util.CollectionUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +21,8 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
 
 /**
  * Category Model.
@@ -45,7 +46,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<CategoryDTO> getTransferClass() {
         return CategoryDTO.class;
     }
 
@@ -78,7 +79,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
         category.setStatus(Status.ACTIVE.getValue());
         super.save(category);
 
-        CacheUtil.clear(CACHE_KEY, request.token());
+        CacheUtils.clear(CACHE_KEY, request.token());
 
         return CategoryMapper.from(category);
     }
@@ -93,13 +94,15 @@ public class CategoryModel extends BaseModel<Category, Long> {
     public CategoryDTO update(Request request) throws ServiceException {
         log.trace("");
 
-        Optional<Category> optCategory = this.findById(request.id(), request.token());
-        Category category = optCategory.orElseThrow(() -> new404NotFoundException(request.id()));
+        Optional<Category> optional = this.findById(request.id(), request.token());
 
+        throwIfTrue(optional.isEmpty(), 404, "Category not found for ID: " + request.id());
+
+        Category category = optional.get();
         category.setName(request.getParameter(NAME).toUpperCase());
         super.update(category);
 
-        CacheUtil.clear(CACHE_KEY, request.token());
+        CacheUtils.clear(CACHE_KEY, request.token());
 
         return CategoryMapper.from(category);
     }
@@ -113,8 +116,12 @@ public class CategoryModel extends BaseModel<Category, Long> {
     public CategoryDTO listById(Request request) throws ServiceException {
         log.trace("");
 
-        var optCategoryDTO = this.findById(request.id(), request.token()).map(CategoryMapper::from);
-        return optCategoryDTO.orElseThrow(() -> new404NotFoundException(request.id()));
+        Optional<CategoryDTO> optional = this.findById(request.id(), request.token())
+                .map(CategoryMapper::from);
+
+        throwIfTrue(optional.isEmpty(), 404, "Category not found for ID: " + request.id());
+
+        return optional.get();
     }
 
 
@@ -150,11 +157,12 @@ public class CategoryModel extends BaseModel<Category, Long> {
     public CategoryDTO delete(Request request) throws ServiceException {
         log.trace("");
 
-        Optional<Category> optCategory = this.findById(request.id(), request.token());
-        Category category = optCategory.orElseThrow(() -> new404NotFoundException(request.id()));
+        Optional<Category> optional = this.findById(request.id(), request.token());
+        throwIfTrue(optional.isEmpty(), 404, "Category not found for ID: " + request.id());
 
+        Category category = optional.get();
         super.delete(category);
-        CacheUtil.clear(CACHE_KEY, request.token());
+        CacheUtils.clear(CACHE_KEY, request.token());
 
         return CategoryMapper.from(category);
     }
@@ -166,7 +174,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
      * @return the list of categories
      */
     public Collection<CategoryDTO> getAllFromCache(String token) {
-        List<CategoryDTO> dtoList = CacheUtil.get(CACHE_KEY, token);
+        List<CategoryDTO> dtoList = CacheUtils.get(CACHE_KEY, token);
 
         if (CollectionUtils.isEmpty(dtoList)) {
             Category category = new Category(super.getUser(token));
@@ -174,7 +182,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
 
             if (!CollectionUtils.isEmpty(categories)) {
                 dtoList = categories.stream().map(CategoryMapper::from).toList();
-                CacheUtil.set(CACHE_KEY, token, dtoList);
+                CacheUtils.set(CACHE_KEY, token, dtoList);
             }
         }
 //
@@ -184,14 +192,14 @@ public class CategoryModel extends BaseModel<Category, Long> {
     /**
      * Find a category by ID.
      *
-     * @param recourceId the category ID
+     * @param resourceId the category ID
      * @param token    the user token
      * @return the category DTO
      */
-    public Optional<Category> findById(Object recourceId, String token) {
+    public Optional<Category> findById(Object resourceId, String token) {
         Collection<CategoryDTO> categories = this.getAllFromCache(token);
 
-        Long id = recourceId == null ? null : Long.valueOf(recourceId.toString());
+        Long id = resourceId == null ? null : Long.valueOf(resourceId.toString());
 
         return categories.stream()
                 .filter(c -> c.getId().equals(id))

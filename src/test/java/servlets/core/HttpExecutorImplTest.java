@@ -1,11 +1,11 @@
 package servlets.core;
 
 import com.dev.servlet.controller.base.BaseRouterController;
-import com.dev.servlet.core.IHttpExecutor;
+import com.dev.servlet.adapter.IHttpExecutor;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.impl.HttpExecutorImpl;
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.impl.HttpExecutorImpl;
 import com.dev.servlet.util.BeanUtil;
 import com.dev.servlet.util.EndpointParser;
 import org.junit.jupiter.api.Assertions;

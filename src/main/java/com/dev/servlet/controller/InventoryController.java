@@ -1,12 +1,13 @@
 package com.dev.servlet.controller;
 
 import com.dev.servlet.controller.base.BaseController;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.IServletResponse;
-import com.dev.servlet.core.RequestMapping;
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.IServletResponse;
+import com.dev.servlet.adapter.RequestMapping;
 import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.dto.InventoryDTO;
 import com.dev.servlet.exception.ServiceException;
+import com.dev.servlet.model.impl.CategoryModel;
 import com.dev.servlet.model.impl.InventoryModel;
 import com.dev.servlet.model.pojo.domain.Inventory;
 import com.dev.servlet.model.pojo.enums.RequestMethod;
@@ -17,7 +18,6 @@ import com.dev.servlet.validator.Constraints;
 import com.dev.servlet.validator.Validator;
 import lombok.NoArgsConstructor;
 
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Set;
 
@@ -26,22 +26,6 @@ import java.util.Set;
 @Controller(path = "/inventory")
 public final class InventoryController extends BaseController<Inventory, Long> {
 
-    CategoryController categoryController;
-
-    @Inject
-    public InventoryController(InventoryModel inventoryModel) {
-        super(inventoryModel);
-    }
-
-    @Inject
-    public void setCategoryController(CategoryController categoryController) {
-        this.categoryController = categoryController;
-    }
-
-    private InventoryModel getModel() {
-        return (InventoryModel) super.getBaseModel();
-    }
-
     /**
      * Forward to the register form.
      *
@@ -49,14 +33,14 @@ public final class InventoryController extends BaseController<Inventory, Long> {
      */
     @RequestMapping(value = "/new")
     public IHttpResponse<Void> forwardRegister() {
-        String path = super.forwardTo("formCreateItem");
-        return HttpResponseImpl.<Void>ok().next(path).build();
+        return HttpResponseImpl.<Void>ok().next(forwardTo("formCreateItem")).build();
     }
 
     /**
      * Create a new item.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IHttpResponse} with the next path
      * @throws ServiceException if any error occurs
      */
@@ -74,18 +58,17 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                             @Constraints(min = 1, message = "Product ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<Void> create(Request request) throws ServiceException {
-        InventoryModel model = this.getModel();
+    public IHttpResponse<Void> create(Request request, InventoryModel model) throws ServiceException {
         InventoryDTO inventory = model.create(request);
         // Created
-        String next = super.redirectTo(inventory.getId());
-        return super.newHttpResponse(201, next);
+        return newHttpResponse(201, redirectTo(inventory.getId()));
     }
 
     /**
      * Delete an item.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IHttpResponse} with the next path
      */
     @RequestMapping(
@@ -96,37 +79,36 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<Void> delete(Request request) {
-        InventoryModel model = this.getModel();
+    public IHttpResponse<Void> delete(Request request, InventoryModel model) {
         model.delete(request);
-
-        String next = super.redirectTo("list");
-        return HttpResponseImpl.<Void>ok().next(next).build();
+        return HttpResponseImpl.<Void>ok().next(redirectTo("list")).build();
     }
 
     /**
      * List all items.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IServletResponse} with the next path
      */
     @RequestMapping(value = "/list")
-    public IServletResponse list(Request request) {
-        Collection<InventoryDTO> inventories = this.getModel().list(request);
-        Collection<CategoryDTO> categories = categoryController.list(request).body();
+    public IServletResponse list(Request request, InventoryModel model, CategoryModel categoryModel) {
+        Collection<InventoryDTO> inventories = model.list(request);
+        Collection<CategoryDTO> categories = categoryModel.list(request);
 
         Set<KeyPair> data = Set.of(
                 new KeyPair("items", inventories),
                 new KeyPair("categories", categories)
         );
 
-        return super.newServletResponse(data, super.forwardTo("listItems"));
+        return newServletResponse(data, forwardTo("listItems"));
     }
 
     /**
      * List an item by ID.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IServletResponse} with the next path
      * @throws ServiceException if any error occurs
      */
@@ -137,17 +119,17 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<InventoryDTO> listById(Request request) throws ServiceException {
-        InventoryModel model = this.getModel();
+    public IHttpResponse<InventoryDTO> listById(Request request, InventoryModel model) throws ServiceException {
         InventoryDTO inventory = model.listById(request);
         // OK
-        return super.okHttpResponse(inventory, super.forwardTo("formListItem"));
+        return okHttpResponse(inventory, forwardTo("formListItem"));
     }
 
     /**
      * Edit an item.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IServletResponse} with the next path
      * @throws ServiceException if any error occurs
      */
@@ -158,17 +140,17 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<InventoryDTO> edit(Request request) throws ServiceException {
-        InventoryModel model = this.getModel();
+    public IHttpResponse<InventoryDTO> edit(Request request, InventoryModel model) throws ServiceException {
         InventoryDTO inventory = model.listById(request);
         // OK
-        return super.okHttpResponse(inventory, super.forwardTo("formUpdateItem"));
+        return okHttpResponse(inventory, forwardTo("formUpdateItem"));
     }
 
     /**
      * Update an item.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain InventoryModel}
      * @return the response {@linkplain IServletResponse} with the next path
      * @throws ServiceException if any error occurs
      */
@@ -189,11 +171,9 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                             @Constraints(min = 1, message = "Product ID must be greater than {0}")
                     })
             })
-    public IHttpResponse<Void> update(Request request) throws ServiceException {
-        InventoryModel model = this.getModel();
+    public IHttpResponse<Void> update(Request request, InventoryModel model) throws ServiceException {
         InventoryDTO inventory = model.update(request);
         // No content
-        String next = super.redirectTo(inventory.getId());
-        return super.newHttpResponse(204, next);
+        return newHttpResponse(204, redirectTo(inventory.getId()));
     }
 }

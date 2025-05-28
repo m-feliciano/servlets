@@ -17,4 +17,14 @@ public interface IPagination<T> {
      * @return {@linkplain IPageable} with the results
      */
     IPageable<T> getAllPageable(IPageRequest<T> pageRequest);
+
+    /**
+     * Get all results with pagination and map to another type
+     *
+     * @param pageRequest {@linkplain IPageRequest}
+     * @param mapper      {@linkplain Mapper} to map the results
+     * @param <U>        the type to which the results will be mapped
+     * @return {@linkplain IPageable} with the mapped results
+     */
+    <U> IPageable<U> getAllPageable(IPageRequest<T> pageRequest, Mapper<T, U> mapper);
 }

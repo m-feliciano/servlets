@@ -1,21 +1,22 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.dto.UserDTO;
+import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.UserMapper;
-import com.dev.servlet.model.Identifier;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.domain.User;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.util.CacheUtil;
 import com.dev.servlet.util.CryptoUtils;
+import com.dev.servlet.util.CacheUtils;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.enterprise.inject.Model;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
+
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
 
 /**
  * The type Login business.
@@ -32,15 +33,15 @@ import javax.servlet.http.HttpServletResponse;
 @Model
 public class LoginModel extends BaseModel<User, Long> {
 
-    private UserModel userBusiness;
+    private UserModel userModel;
 
     @Inject
-    public void setUserBusiness(UserModel userBusiness) {
-        this.userBusiness = userBusiness;
+    public LoginModel(UserModel userModel) {
+        this.userModel = userModel;
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<UserDTO> getTransferClass() {
         return UserDTO.class;
     }
 
@@ -63,13 +64,12 @@ public class LoginModel extends BaseModel<User, Long> {
                 request.getParameter("password")
         );
 
-        user = userBusiness.findByLoginAndPassword(user)
-                .orElseThrow(() -> new ServiceException(HttpServletResponse.SC_UNAUTHORIZED, "Invalid login or password"));
+        Optional<User> optional = userModel.findByLoginAndPassword(user);
+        throwIfTrue(optional.isEmpty(), 401, "Invalid login or password");
 
-        var userDTO = UserMapper.full(user);
-        String jwtToken = CryptoUtils.generateJWTToken(userDTO);
-        userDTO.setToken(jwtToken);
-        return userDTO;
+        UserDTO dto = UserMapper.full(optional.get());
+        dto.setToken(CryptoUtils.generateJwtToken(dto));
+        return dto;
     }
 
     /**
@@ -79,7 +79,6 @@ public class LoginModel extends BaseModel<User, Long> {
      */
     public void logout(Request request) {
         log.trace("");
-
-        CacheUtil.clearAll(request.token());
+        CacheUtils.clearAll(request.token());
     }
 }

@@ -1,12 +1,12 @@
-package com.dev.servlet.core.impl;
+package com.dev.servlet.adapter.impl;
 
-import com.dev.servlet.core.IHttpExecutor;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.IRateLimiter;
-import com.dev.servlet.core.IServletDispatcher;
-import com.dev.servlet.core.builder.HtmlTemplate;
-import com.dev.servlet.core.builder.RequestBuilder;
-import com.dev.servlet.core.interceptor.LogExecutionTimeInterceptor;
+import com.dev.servlet.adapter.IHttpExecutor;
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.IRateLimiter;
+import com.dev.servlet.adapter.IServletDispatcher;
+import com.dev.servlet.adapter.builder.HtmlTemplate;
+import com.dev.servlet.adapter.builder.RequestBuilder;
+import com.dev.servlet.adapter.interceptor.LogExecutionTimeInterceptor;
 import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.pojo.records.Request;
@@ -26,6 +26,8 @@ import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
 import java.util.Set;
+
+import static com.dev.servlet.util.CryptoUtils.isValidToken;
 
 /**
  * This class is responsible for dispatching the request to the appropriate servlet.
@@ -239,9 +241,12 @@ public class ServletDispatcherImpl implements IServletDispatcher {
      * @param response     {@linkplain IHttpResponse}
      * @author marcelo.feliciano
      */
-    private void processResponseData(HttpServletRequest httpRequest, HttpServletResponse httpResponse, Request request, IHttpResponse<?> response) {
+    private void processResponseData(HttpServletRequest httpRequest,
+                                     HttpServletResponse httpResponse,
+                                     Request request,
+                                     IHttpResponse<?> response) {
 
-        if (request.token() == null && response.body() instanceof UserDTO user) {
+        if (!isValidToken(request.token()) && response.body() instanceof UserDTO user) {
             this.setSessionAttributes(httpRequest.getSession(), user);
         } else {
             this.setRequestAttributes(httpRequest, response);

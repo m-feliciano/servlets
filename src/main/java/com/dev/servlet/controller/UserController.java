@@ -1,6 +1,8 @@
 package com.dev.servlet.controller;
 
 import com.dev.servlet.controller.base.BaseController;
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.RequestMapping;
 import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.impl.UserModel;
@@ -9,32 +11,20 @@ import com.dev.servlet.model.pojo.enums.RequestMethod;
 import com.dev.servlet.model.pojo.enums.RoleType;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.RequestMapping;
 import com.dev.servlet.validator.Constraints;
 import com.dev.servlet.validator.Validator;
 import lombok.NoArgsConstructor;
-
-import javax.inject.Inject;
 
 
 @NoArgsConstructor
 @Controller(path = "/user")
 public final class UserController extends BaseController<User, Long> {
 
-    @Inject
-    public UserController(UserModel userModel) {
-        super(userModel);
-    }
-
-    private UserModel getModel() {
-        return (UserModel) super.getBaseModel();
-    }
-
     /**
      * Update user.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain UserModel}
      * @return {@linkplain IHttpResponse} with the updated user
      * @throws ServiceException if the user is not found
      */
@@ -52,18 +42,17 @@ public final class UserController extends BaseController<User, Long> {
                             @Constraints(minLength = 5, maxLength = 30, message = "Password length must be between {0} and {1} characters")
                     })
             })
-    public IHttpResponse<Void> update(Request request) throws ServiceException {
-        UserModel model = this.getModel();
+    public IHttpResponse<UserDTO> update(Request request, UserModel model) throws ServiceException {
         UserDTO user = model.update(request);
         // OK
-        String next = super.redirectTo(user.getId());
-        return super.newHttpResponse(204, next);
+        return newHttpResponse(204, user, redirectTo(user.getId()));
     }
 
     /**
      * Delete user.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain UserModel}
      * @return {@linkplain IHttpResponse} with no content {@linkplain Void}
      */
     @RequestMapping(
@@ -75,18 +64,16 @@ public final class UserController extends BaseController<User, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<Void> delete(Request request) throws ServiceException {
-        UserModel model = this.getModel();
+    public IHttpResponse<Void> delete(Request request, UserModel model) throws ServiceException {
         model.delete(request);
-
-        String next = super.forwardTo("formLogin");
-        return HttpResponseImpl.<Void>ok().next(next).build();
+        return HttpResponseImpl.<Void>ok().next(forwardTo("formLogin")).build();
     }
 
     /**
      * Create user.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain UserModel}
      * @return {@linkplain IHttpResponse}
      */
     @RequestMapping(
@@ -103,17 +90,17 @@ public final class UserController extends BaseController<User, Long> {
                                     @Constraints(maxLength = 30, message = "Password must have at most {0} characters"),
                             }),
             })
-    public IHttpResponse<Void> register(Request request) throws ServiceException {
-        UserModel model = this.getModel();
+    public IHttpResponse<Void> register(Request request, UserModel model) throws ServiceException {
         model.register(request);
         // Created
-        return super.newHttpResponse(201,  "redirect:/api/v1/login/form");
+        return newHttpResponse(201,  "redirect:/api/v1/login/form");
     }
 
     /**
      * List the user by id.
      *
      * @param request {@linkplain Request}
+     * @param model   {@linkplain UserModel}
      * @return {@linkplain IHttpResponse} of {@linkplain UserDTO}
      */
     @RequestMapping(
@@ -123,10 +110,9 @@ public final class UserController extends BaseController<User, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<UserDTO> listById(Request request) throws ServiceException {
-        UserModel model = this.getModel();
+    public IHttpResponse<UserDTO> list(Request request, UserModel model) throws ServiceException {
         UserDTO user = model.findById(request);
         // OK
-        return super.okHttpResponse(user, super.forwardTo("formListUser"));
+        return okHttpResponse(user, forwardTo("formListUser"));
     }
 }

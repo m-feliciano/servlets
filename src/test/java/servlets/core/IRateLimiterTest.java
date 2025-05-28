@@ -1,7 +1,7 @@
 package servlets.core;
 
-import com.dev.servlet.core.IRateLimiter;
-import com.dev.servlet.core.impl.LeakyBucketImpl;
+import com.dev.servlet.adapter.IRateLimiter;
+import com.dev.servlet.adapter.impl.LeakyBucketImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

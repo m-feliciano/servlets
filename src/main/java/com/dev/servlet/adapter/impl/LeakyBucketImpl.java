@@ -1,6 +1,6 @@
-package com.dev.servlet.core.impl;
+package com.dev.servlet.adapter.impl;
 
-import com.dev.servlet.core.IRateLimiter;
+import com.dev.servlet.adapter.IRateLimiter;
 
 import javax.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;

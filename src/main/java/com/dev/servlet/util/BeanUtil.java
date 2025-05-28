@@ -97,7 +97,7 @@ public final class BeanUtil {
          * @param beanType the class of the bean
          * @return the resolved bean instance
          */
-        private Object resolve(Class<?> beanType) {
+        public Object resolve(Class<?> beanType) {
             try {
                 BeanManager bm = ResolverHolder.beanManager;
                 Bean<?> bean = bm.resolve(bm.getBeans(beanType));

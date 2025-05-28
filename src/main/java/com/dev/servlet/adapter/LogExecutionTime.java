@@ -1,4 +1,4 @@
-package com.dev.servlet.core;
+package com.dev.servlet.adapter;
 
 import javax.interceptor.InterceptorBinding;
 import java.lang.annotation.ElementType;

@@ -6,10 +6,10 @@ import com.dev.servlet.model.pojo.records.Sort;
 import com.dev.servlet.persistence.IPageRequest;
 import com.dev.servlet.persistence.impl.PageRequestImpl;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,9 +26,10 @@ import java.util.List;
 public final class URIUtils {
 
     public static final String URI_INTERNAL_CACHE_KEY = "uri_internal_cache_key";
+    public static final String URI_INTERNAL_CACHE_VALUE_KEY = RandomStringUtils.randomAlphanumeric(30);
     public static final String DEFAULT_SORT_FIELD = "id";
     public static final String DEFAULT_SORT_ORDER = "asc";
-    public static final int DEFAULT_MIN_PAGE_SIZE = 2;
+    public static final int DEFAULT_MIN_PAGE_SIZE = 1;
     public static final int DEFAULT_INITIAL_PAGE = 1;
 
     /**
@@ -113,24 +114,18 @@ public final class URIUtils {
      * @return {@linkplain PageRequestImpl}
      */
     public static PageRequestImpl<?> getDefaultPageValue() {
-        List<Serializable> cachedData = CacheUtil.get(URI_INTERNAL_CACHE_KEY, "default_pagination_internal");
-
-        if (!CollectionUtils.isEmpty(cachedData)) {
-            Object object = cachedData.get(0);
-            return (PageRequestImpl<?>) object;
+        PageRequestImpl<?> cachedData = CacheUtils.getObject(URI_INTERNAL_CACHE_KEY, URI_INTERNAL_CACHE_VALUE_KEY);
+        if (cachedData == null) {
+            cachedData = buildPagination();
+            CacheUtils.setObject(URI_INTERNAL_CACHE_KEY, URI_INTERNAL_CACHE_VALUE_KEY, cachedData);
         }
-
-        var pagination = buildPagination();
-
-        CacheUtil.set(URI_INTERNAL_CACHE_KEY, "default_pagination_internal", List.of(pagination));
-
-        return pagination;
+        return cachedData;
     }
 
     /**
      * Build the pagination object.
      */
-    private static PageRequestImpl<?> buildPagination() {
+    private static PageRequestImpl<Object> buildPagination() {
         int page = PropertiesUtil.getProperty("pagination.page", DEFAULT_INITIAL_PAGE);
         int size = PropertiesUtil.getProperty("pagination.limit", DEFAULT_MIN_PAGE_SIZE);
         String field = PropertiesUtil.getProperty("pagination.sort", DEFAULT_SORT_FIELD);

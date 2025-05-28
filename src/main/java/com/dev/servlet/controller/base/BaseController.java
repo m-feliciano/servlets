@@ -1,15 +1,13 @@
 package com.dev.servlet.controller.base;
 
 import com.dev.servlet.controller.Controller;
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.IServletResponse;
 import com.dev.servlet.model.Identifier;
-import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.KeyPair;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.IServletResponse;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,12 +17,9 @@ import java.util.Set;
  * Base Controller for the application
  *
  * @param <T> the entity extends {@linkplain Identifier} of {@linkplain K}
- * @param <K> the entity id
- * @implNote You should extend this class and provide a Model specialization, which extends {@linkplain BaseModel}.
- * @see BaseModel
+ * @param <K> the entity id type
  */
 @Slf4j
-@NoArgsConstructor
 @Getter(AccessLevel.PROTECTED)
 public abstract class BaseController<T extends Identifier<K>, K> extends BaseRouterController {
 
@@ -33,19 +28,18 @@ public abstract class BaseController<T extends Identifier<K>, K> extends BaseRou
     private static final String REDIRECT_TO = "redirect:/api/v1/{webService}/{context}";
     protected static final String LIST = "list";
 
-    @Getter
-    protected BaseModel<T, K> baseModel;
-
     @Setter(AccessLevel.PROTECTED)
     private String webService;
 
-    protected BaseController(BaseModel<T, K> baseModel) {
-        this.baseModel = baseModel;
-        this.webService = getControllerPath();
+    protected BaseController() {
+        this.webService = webServiceFromClass(this.getClass());
     }
 
-    private String getControllerPath() {
-        return this.getClass().getAnnotation(Controller.class).path().substring(1);
+    private static String webServiceFromClass(Class<?> clazz) {
+        return clazz
+                .getAnnotation(Controller.class)
+                .path()
+                .substring(1);
     }
 
     /**
@@ -72,7 +66,6 @@ public abstract class BaseController<T extends Identifier<K>, K> extends BaseRou
      * Forward to the path
      *
      * @param page
-     * @return
      */
     protected String forwardTo(String page) {
         return getNext(FORWARD_TO, page);
@@ -83,7 +76,6 @@ public abstract class BaseController<T extends Identifier<K>, K> extends BaseRou
      *
      * @param webService
      * @param context
-     * @return
      */
     private String getNext(String webService, String context) {
         String replace = webService.replace("{webService}", this.webService);
@@ -124,7 +116,11 @@ public abstract class BaseController<T extends Identifier<K>, K> extends BaseRou
      * @param <U>      the response type
      */
     protected <U> IHttpResponse<U> newHttpResponse(int status, U response, String nextPath) {
-        return HttpResponseImpl.<U>newBuilder().statusCode(status).body(response).next(nextPath).build();
+        return HttpResponseImpl.<U>newBuilder()
+                .statusCode(status)
+                .body(response)
+                .next(nextPath)
+                .build();
     }
 
     /**
@@ -134,7 +130,10 @@ public abstract class BaseController<T extends Identifier<K>, K> extends BaseRou
      * @param <U>      the response type
      */
     protected <U> IHttpResponse<U> newHttpResponse(int status, String nextPath) {
-        return HttpResponseImpl.<U>newBuilder().statusCode(status).next(nextPath).build();
+        return HttpResponseImpl.<U>newBuilder()
+                .statusCode(status)
+                .next(nextPath)
+                .build();
     }
 
     protected <U> IHttpResponse<U> okHttpResponse(U response, String nextPath) {

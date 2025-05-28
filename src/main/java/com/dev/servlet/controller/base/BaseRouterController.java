@@ -1,31 +1,44 @@
 package com.dev.servlet.controller.base;
 
+import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.RequestMapping;
 import com.dev.servlet.exception.ServiceException;
-import com.dev.servlet.core.IHttpResponse;
-import com.dev.servlet.core.RequestMapping;
+import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.validator.RequestValidator;
+import com.dev.servlet.util.BeanUtil;
 import com.dev.servlet.util.EndpointParser;
+import com.dev.servlet.validator.RequestValidator;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
+
 public abstract class BaseRouterController {
 
-    private final Map<String, Method> routeMappings = new HashMap<>();
+    private final Map<String, RouteMapping> routeMappings = new HashMap<>();
+
+    public record RouteMapping(Method method, Class<?>[] parameterTypes) {
+        public RouteMapping(Method method) {
+            this(method, method.getParameterTypes());
+        }
+    }
 
     protected BaseRouterController() {
-        // Mapeia os métodos anotados com @RequestMapping
+        initRouteMapping();
+    }
+
+    private void initRouteMapping() {
         for (Method method : this.getClass().getDeclaredMethods()) {
             if (!method.isAnnotationPresent(RequestMapping.class)) {
                 continue;
             }
 
-            RequestMapping mapping = method.getAnnotation(RequestMapping.class);
-            routeMappings.put(mapping.value().substring(1), method);
+            var requestMapping = method.getAnnotation(RequestMapping.class);
+            String serviceController = requestMapping.value().substring(1);
+
+            routeMappings.put(serviceController, new RouteMapping(method));
         }
     }
 
@@ -34,46 +47,46 @@ public abstract class BaseRouterController {
      *
      * @param endpoint The endpoint to route
      * @param request  The HTTP request
-     * @return
      * @throws Exception
      */
     public <U> IHttpResponse<U> route(EndpointParser endpoint, Request request) throws Exception {
-        Method method = getEndpointMethod(endpoint);
+        var routeMapping = routeMappingFromEndpoint(endpoint);
+        var requestMapping = routeMapping.method().getAnnotation(RequestMapping.class);
 
-        RequestMapping mapping = method.getAnnotation(RequestMapping.class);
-        RequestValidator.validate(endpoint, mapping, request);
+        RequestValidator.validate(endpoint, requestMapping, request);
 
-        Object[] args = prepareMethodArguments(method, request);
-        return invokeServiceMethod(this, method, args);
+        Object[] args = prepareMethodArguments(routeMapping, request);
+        return invokeServiceMethod(this, routeMapping.method(), args);
     }
 
     /**
      * Retrieves the service method based on the endpoint.
      *
      * @param endpoint The endpoint to route
-     * @return
      * @throws ServiceException
      */
-    private Method getEndpointMethod(EndpointParser endpoint) throws ServiceException {
-        Method method = routeMappings.get(endpoint.getServiceName());
-        if (method == null) {
-            throw ServiceException.badRequest("Method not found for endpoint: " + endpoint.getServiceName());
-        }
-
-        return method;
+    private RouteMapping routeMappingFromEndpoint(EndpointParser endpoint) throws ServiceException {
+        var routeMapping = routeMappings.get(endpoint.getServiceName());
+        throwIfTrue((routeMapping == null), 404, "Endpoint not found: " + endpoint.getServiceName());
+        return routeMapping;
     }
 
     /**
      * Prepares the method arguments based on the request parameters.
      *
-     * @param method  The service method
+     * @param mapping  The service method
      * @param request The HTTP request
      * @return Array of method arguments
      */
-    private Object[] prepareMethodArguments(Method method, Request request) {
-        return Arrays.stream(method.getParameters())
-                .map(parameter -> resolveArgument(parameter, request))
-                .toArray();
+    private Object[] prepareMethodArguments(RouteMapping mapping, Request request) throws ServiceException {
+        Object[] args = new Object[mapping.parameterTypes().length];
+
+        for (int i = 0; i < mapping.parameterTypes().length; i++) {
+            Class<?> parameter = mapping.parameterTypes()[i];
+            args[i] = resolveArgument(parameter, request);
+        }
+
+        return args;
     }
 
     /**
@@ -83,15 +96,21 @@ public abstract class BaseRouterController {
      * @param request   The HTTP request
      * @return The resolved argument
      */
-    private Object resolveArgument(Parameter parameter, Request request) {
-        if (parameter.getType().isAssignableFrom(Request.class)) {
+    private Object resolveArgument(Class<?> parameter, Request request) throws ServiceException {
+        if (Request.class.isAssignableFrom(parameter)) {
             return request;
+        }
+
+        if (BaseModel.class.isAssignableFrom(parameter)) {
+            var baseModel = (BaseModel<?, ?>) BeanUtil.getResolver().resolve(parameter);
+            throwIfTrue(baseModel == null, 500, "Error resolving the request parameter");
+            return baseModel;
         }
 
         if (request.body() != null) {
             return request.body()
                     .stream()
-                    .filter(body -> body.getClass().isAssignableFrom(parameter.getType()))
+                    .filter(body -> parameter.isAssignableFrom(body.getClass()))
                     .findFirst()
                     .orElse(null);
         }

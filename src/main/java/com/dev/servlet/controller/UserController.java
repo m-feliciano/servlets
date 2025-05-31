@@ -56,8 +56,7 @@ public final class UserController extends BaseController<User, Long> {
         UserModel model = this.getModel();
         UserDTO user = model.update(request);
         // OK
-        String next = super.redirectTo(user.getId());
-        return super.newHttpResponse(204, next);
+        return super.newHttpResponse(204, redirectTo(user.getId()));
     }
 
     /**
@@ -79,7 +78,7 @@ public final class UserController extends BaseController<User, Long> {
         UserModel model = this.getModel();
         model.delete(request);
 
-        String next = super.forwardTo("formLogin");
+        String next = forwardTo("formLogin");
         return HttpResponseImpl.<Void>ok().next(next).build();
     }
 
@@ -127,6 +126,6 @@ public final class UserController extends BaseController<User, Long> {
         UserModel model = this.getModel();
         UserDTO user = model.findById(request);
         // OK
-        return super.okHttpResponse(user, super.forwardTo("formListUser"));
+        return super.okHttpResponse(user, forwardTo("formListUser"));
     }
 }

@@ -7,6 +7,8 @@ import com.dev.servlet.core.IServletResponse;
 import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.exception.ServiceException;
+import com.dev.servlet.mapper.ProductMapper;
+import com.dev.servlet.model.Mapper;
 import com.dev.servlet.model.impl.ProductModel;
 import com.dev.servlet.model.pojo.domain.Product;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
@@ -130,18 +132,18 @@ class ProductControllerTest {
         when(categoryController.list(any())).thenReturn(categoryResponse);
 
         var products = List.of(
-                new Product("prod1", "desc1", BigDecimal.valueOf(50)),
-                new Product("prod2", "desc2", BigDecimal.valueOf(50))
+                ProductMapper.base(new Product("prod1", "desc1", BigDecimal.valueOf(50))),
+                ProductMapper.base(new Product("prod2", "desc2", BigDecimal.valueOf(50)))
         );
 
-        var pageableMock = PageableImpl.<Product>builder()
+        var pageableMock = PageableImpl.<ProductDTO>builder()
                 .content(products)
                 .currentPage(1)
                 .pageSize(2)
                 .sort(Sort.by("id").ascending())
                 .build();
 
-        when(productModel.getAllPageable(any())).thenReturn(pageableMock);
+        when(productModel.getAllPageable(any(), any(Mapper.class))).thenReturn(pageableMock);
         when(productModel.calculateTotalPriceFor(any())).thenReturn(BigDecimal.valueOf(100));
 
         // Execution
@@ -152,35 +154,36 @@ class ProductControllerTest {
         assertEquals(200, response.statusCode());
 
         // Verify pageable content
-        var pageable = (IPageable<Product>) response.body().stream()
+        var pageable = response.body().stream()
                 .filter(pair -> "pageable".equals(pair.key()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Pageable not found"))
-                .value();
+                .map(e -> (IPageable<ProductDTO>) e.value())
+                .orElseThrow(() -> new AssertionError("Pageable not found"));
 
         long counter = StreamSupport.stream(pageable.getContent().spliterator(), false).count();
         assertEquals(2, counter);
 
         // Verify total price
-        BigDecimal totalPrice = (BigDecimal) response.body().stream()
+        BigDecimal totalPrice = response.body().stream()
                 .filter(pair -> "totalPrice".equals(pair.key()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Total price not found"))
-                .value();
+                .map(e -> (BigDecimal) e.value())
+                .orElse(null);
 
         assertEquals(BigDecimal.valueOf(100), totalPrice);
 
         // Verify categories
-        var responseCategories = (Collection<CategoryDTO>) response.body().stream()
+        var responseCategories = response.body().stream()
                 .filter(pair -> "categories".equals(pair.key()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Categories not found"))
-                .value();
+                .map(e -> (Collection<CategoryDTO>) e.value())
+                .orElse(null);
+
         assertEquals(categories, responseCategories);
 
         // Verify interactions
         verify(productModel, times(1)).getEntity(request);
-        verify(productModel, times(1)).getAllPageable(any());
+        verify(productModel, times(1)).getAllPageable(any(), any(Mapper.class));
         verify(productModel, times(1)).calculateTotalPriceFor(filterMock);
         verify(categoryController, times(1)).list(any());
     }

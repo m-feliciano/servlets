@@ -38,7 +38,7 @@ public final class CategoryController extends BaseController<Category, Long> {
      */
     @RequestMapping(value = "/new")
     public IHttpResponse<Void> forwardRegister() {
-        String next = super.forwardTo("formCreateCategory");
+        String next = forwardTo("formCreateCategory");
         return HttpResponseImpl.<Void>ok().next(next).build();
     }
 
@@ -61,8 +61,7 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         model.delete(request);
 
-        String next = super.redirectTo(LIST);
-        return HttpResponseImpl.<Void>ok().next(next).build();
+        return HttpResponseImpl.<Void>ok().next(redirectTo(LIST)).build();
     }
 
     /**
@@ -83,7 +82,7 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         CategoryDTO category = model.listById(request);
         // OK
-        return super.okHttpResponse(category, super.forwardTo("formUpdateCategory"));
+        return super.okHttpResponse(category, forwardTo("formUpdateCategory"));
     }
 
     /**
@@ -105,8 +104,7 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         CategoryDTO category = model.register(request);
         // Created
-        String next = super.redirectTo(category.getId());
-        return super.newHttpResponse(201, next);
+        return super.newHttpResponse(201, redirectTo(category.getId()));
     }
 
     /**
@@ -133,8 +131,7 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         CategoryDTO category = model.update(request);
         // No Content
-        String next = super.redirectTo(category.getId());
-        return super.newHttpResponse(204, next);
+        return super.newHttpResponse(204, redirectTo(category.getId()));
     }
 
     /**
@@ -148,7 +145,7 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         Collection<CategoryDTO> categories = model.list(request);
         // OK
-        return super.okHttpResponse(categories, super.forwardTo("listCategories"));
+        return super.okHttpResponse(categories, forwardTo("listCategories"));
     }
 
     /**
@@ -168,6 +165,6 @@ public final class CategoryController extends BaseController<Category, Long> {
         CategoryModel model = this.getModel();
         CategoryDTO category = model.listById(request);
         // OK
-        return super.okHttpResponse(category, super.forwardTo("formListCategory"));
+        return super.okHttpResponse(category, forwardTo("formListCategory"));
     }
 }

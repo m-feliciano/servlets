@@ -1,9 +1,7 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.model.Identifier;
-import com.dev.servlet.persistence.dao.UserDAO;
-import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.dto.UserDTO;
+import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.UserMapper;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.domain.User;
@@ -11,6 +9,7 @@ import com.dev.servlet.model.pojo.enums.RoleType;
 import com.dev.servlet.model.pojo.enums.Status;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.persistence.dao.UserDAO;
 import com.dev.servlet.util.CacheUtil;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +42,7 @@ public class UserModel extends BaseModel<User, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<UserDTO> getTransferClass() {
         return UserDTO.class;
     }
 

@@ -1,9 +1,8 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.dto.UserDTO;
+import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.UserMapper;
-import com.dev.servlet.model.Identifier;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.domain.User;
 import com.dev.servlet.model.pojo.records.Request;
@@ -40,7 +39,7 @@ public class LoginModel extends BaseModel<User, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<UserDTO> getTransferClass() {
         return UserDTO.class;
     }
 

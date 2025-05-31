@@ -49,8 +49,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
      */
     @RequestMapping(value = "/new")
     public IHttpResponse<Void> forwardRegister() {
-        String path = super.forwardTo("formCreateItem");
-        return HttpResponseImpl.<Void>ok().next(path).build();
+        return HttpResponseImpl.<Void>ok().next(forwardTo("formCreateItem")).build();
     }
 
     /**
@@ -78,8 +77,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
         InventoryModel model = this.getModel();
         InventoryDTO inventory = model.create(request);
         // Created
-        String next = super.redirectTo(inventory.getId());
-        return super.newHttpResponse(201, next);
+        return super.newHttpResponse(201, redirectTo(inventory.getId()));
     }
 
     /**
@@ -100,8 +98,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
         InventoryModel model = this.getModel();
         model.delete(request);
 
-        String next = super.redirectTo("list");
-        return HttpResponseImpl.<Void>ok().next(next).build();
+        return HttpResponseImpl.<Void>ok().next(redirectTo("list")).build();
     }
 
     /**
@@ -120,7 +117,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
                 new KeyPair("categories", categories)
         );
 
-        return super.newServletResponse(data, super.forwardTo("listItems"));
+        return super.newServletResponse(data, forwardTo("listItems"));
     }
 
     /**
@@ -141,7 +138,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
         InventoryModel model = this.getModel();
         InventoryDTO inventory = model.listById(request);
         // OK
-        return super.okHttpResponse(inventory, super.forwardTo("formListItem"));
+        return super.okHttpResponse(inventory, forwardTo("formListItem"));
     }
 
     /**
@@ -162,7 +159,7 @@ public final class InventoryController extends BaseController<Inventory, Long> {
         InventoryModel model = this.getModel();
         InventoryDTO inventory = model.listById(request);
         // OK
-        return super.okHttpResponse(inventory, super.forwardTo("formUpdateItem"));
+        return super.okHttpResponse(inventory, forwardTo("formUpdateItem"));
     }
 
     /**
@@ -193,7 +190,6 @@ public final class InventoryController extends BaseController<Inventory, Long> {
         InventoryModel model = this.getModel();
         InventoryDTO inventory = model.update(request);
         // No content
-        String next = super.redirectTo(inventory.getId());
-        return super.newHttpResponse(204, next);
+        return super.newHttpResponse(204, redirectTo(inventory.getId()));
     }
 }

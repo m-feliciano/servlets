@@ -3,7 +3,6 @@ package com.dev.servlet.model.impl;
 import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.ProductMapper;
-import com.dev.servlet.model.Identifier;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.domain.Inventory;
@@ -57,7 +56,7 @@ public class ProductModel extends BaseModel<Product, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<ProductDTO> getTransferClass() {
         return ProductDTO.class;
     }
 

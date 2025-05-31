@@ -7,12 +7,14 @@ import com.dev.servlet.core.RequestMapping;
 import com.dev.servlet.dto.CategoryDTO;
 import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.exception.ServiceException;
+import com.dev.servlet.mapper.ProductMapper;
 import com.dev.servlet.model.impl.ProductModel;
 import com.dev.servlet.model.pojo.domain.Product;
 import com.dev.servlet.model.pojo.enums.RequestMethod;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.KeyPair;
 import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.persistence.IPageRequest;
 import com.dev.servlet.persistence.IPageable;
 import com.dev.servlet.validator.Constraints;
 import com.dev.servlet.validator.Validator;
@@ -68,8 +70,7 @@ public final class ProductController extends BaseController<Product, Long> {
         ProductModel model = this.getModel();
         ProductDTO product = model.create(request);
         // Created
-        String next = super.redirectTo(product.getId());
-        return super.newHttpResponse(201, next);
+        return super.newHttpResponse(201, redirectTo(product.getId()));
     }
 
     /**
@@ -82,7 +83,7 @@ public final class ProductController extends BaseController<Product, Long> {
     public IHttpResponse<Collection<CategoryDTO>> forward(Request request) {
         var categories = categoryController.list(request.withToken()).body();
         // Found
-        return super.newHttpResponse(302, categories, super.forwardTo("formCreateProduct"));
+        return super.newHttpResponse(302, categories, forwardTo("formCreateProduct"));
     }
 
     /**
@@ -109,7 +110,7 @@ public final class ProductController extends BaseController<Product, Long> {
                 new KeyPair("categories", categories)
         );
 
-        return super.newServletResponse(data, super.forwardTo("formUpdateProduct"));
+        return super.newServletResponse(data, forwardTo("formUpdateProduct"));
     }
 
     /**
@@ -120,27 +121,18 @@ public final class ProductController extends BaseController<Product, Long> {
      */
     @RequestMapping(value = "/list")
     public IServletResponse list(Request request) {
-        ProductModel model = this.getModel();
-        Product filter = model.getEntity(request);
+        Product filter = getModel().getEntity(request);
 
-        request.query().getPageRequest().setFilter(filter);
-
-        IPageable<Product> pageable = model.getAllPageable(request.query().getPageRequest());
-
-        Set<KeyPair> container = new HashSet<>();
-        container.add(new KeyPair("pageable", pageable));
-
-        if (pageable.getContent().iterator().hasNext()) {
-            BigDecimal totalPrice = model.calculateTotalPriceFor(filter);
-            container.add(new KeyPair("totalPrice", totalPrice));
-        }
-
+        IPageable<ProductDTO> page = getProductDTOPage(request.query().getPageRequest(), filter);
+        BigDecimal price = calculateTotalPrice(page, filter);
         Collection<CategoryDTO> categories = categoryController.list(request.withToken()).body();
 
+        Set<KeyPair> container = new HashSet<>();
+        container.add(new KeyPair("pageable", page));
+        container.add(new KeyPair("totalPrice", price));
         container.add(new KeyPair("categories", categories));
 
-        String next = super.forwardTo("listProducts");
-        return super.newServletResponse(container, next);
+        return super.newServletResponse(container, forwardTo("listProducts"));
     }
 
     /**
@@ -161,7 +153,7 @@ public final class ProductController extends BaseController<Product, Long> {
         ProductModel model = this.getModel();
         ProductDTO product = model.getById(request);
         // OK
-        return super.okHttpResponse(product, super.forwardTo("formListProduct"));
+        return super.okHttpResponse(product, forwardTo("formListProduct"));
     }
 
     /**
@@ -192,8 +184,7 @@ public final class ProductController extends BaseController<Product, Long> {
         ProductModel model = this.getModel();
         ProductDTO product = model.update(request);
         // No Content
-        String next = super.redirectTo(product.getId());
-        return super.newHttpResponse(204, next);
+        return super.newHttpResponse(204, redirectTo(product.getId()));
     }
 
     /**
@@ -218,7 +209,21 @@ public final class ProductController extends BaseController<Product, Long> {
         ProductModel model = this.getModel();
         model.delete(request);
 
-        String next = super.redirectTo(LIST);
-        return HttpResponseImpl.<Void>ok().next(next).build();
+        return HttpResponseImpl.<Void>ok().next(redirectTo(LIST)).build();
+    }
+
+    private IPageable<ProductDTO> getProductDTOPage(IPageRequest<Product> pageRequest, Product filter) {
+        pageRequest.setFilter(filter);
+
+        return baseModel.getAllPageable(pageRequest, ProductMapper::base);
+    }
+
+    private BigDecimal calculateTotalPrice(IPageable<?> page, Product filter) {
+        if (page != null && page.getContent().iterator().hasNext()) {
+            ProductModel model = getModel();
+            return model.calculateTotalPriceFor(filter);
+        }
+
+        return BigDecimal.ZERO;
     }
 }

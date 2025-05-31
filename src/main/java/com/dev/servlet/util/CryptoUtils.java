@@ -18,6 +18,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class CryptoUtils {
 
+    public static final int SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
     private static byte[] getSecurityKey() throws Exception {
         String key = PropertiesUtil.getProperty("security.encrypt.key");
         if (key == null) throw new Exception("Security key is not set");
@@ -85,13 +87,10 @@ public final class CryptoUtils {
      * Get a JWT Token from a User
      *
      * @param user
-     * @return
      */
     public static String generateJWTToken(UserDTO user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(getJWTSecretKey());
-
-            int sevenDays = 7 * 24 * 60 * 60 * 1000;
 
             long currentTimeMillis = System.currentTimeMillis();
             return JWT.create()
@@ -100,7 +99,7 @@ public final class CryptoUtils {
                     .withClaim("userId", user.getId())
                     .withArrayClaim("roles", user.getPerfis().toArray(new Long[0]))
                     .withIssuedAt(new Date())
-                    .withExpiresAt(new Date(currentTimeMillis + sevenDays))
+                    .withExpiresAt(new Date(currentTimeMillis + SEVEN_DAYS))
                     .withJWTId(UUID.randomUUID().toString())
 //                    .withNotBefore(new Date(currentTimeMillis + 1000L))
                     .sign(algorithm);
@@ -113,16 +112,14 @@ public final class CryptoUtils {
      * Verify a JWT Token
      *
      * @param token
-     * @return
      */
     public static boolean verifyToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(getJWTSecretKey());
-            JWTVerifier verifier = JWT.require(algorithm)
-                    .withIssuer("Servlet")
-                    .build();
-            verifier.verify(token);
-            return true;
+            JWTVerifier verifier = JWT.require(algorithm).withIssuer("Servlet").build();
+            DecodedJWT verified = verifier.verify(token);
+
+            return verified.getExpiresAt() != null && !verified.getExpiresAt().before(new Date()); // Token has expired
         } catch (Exception ignored) {
         }
 
@@ -133,7 +130,6 @@ public final class CryptoUtils {
      * Get the user from a token
      *
      * @param token
-     * @return {@linkplain User}
      */
     public static User getUser(String token) {
         DecodedJWT decodedJWT = JWT.decode(token);

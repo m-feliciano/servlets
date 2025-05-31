@@ -30,10 +30,14 @@ import java.util.Collection;
 @NoArgsConstructor
 public abstract class BaseDAO<T, E> implements Serializable {
 
+    @FunctionalInterface
+    private interface TransactionAction<R> {
+        R execute();
+    }
+
     protected static final String STATUS = "status";
     protected static final String USER = "user";
     protected static final String ID = "id";
-    public static final String NOT_IMPLEMENTED = "Not implemented";
 
     protected EntityManager em;
     private Class<T> specialization;
@@ -48,49 +52,33 @@ public abstract class BaseDAO<T, E> implements Serializable {
         specialization = ClassUtil.getSubClassType(this.getClass());
     }
 
-
     public T findById(E id) {
         return em.find(specialization, id);
-    }
-
-    public void save(T object) {
-        try {
-            this.beginTransaction();
-            em.persist(object);
-            this.em.flush();
-            this.commitTransaction();
-
-        } catch (Exception e) {
-            log.error("Error saving object: {}", e.getMessage());
-            rollbackTransaction();
-        }
-
-    }
-
-    public T update(T object) {
-        try {
-            this.beginTransaction();
-            object = em.merge(object);
-            this.em.flush();
-            this.commitTransaction();
-
-            return object;
-        } catch (Exception e) {
-            log.error("Error updating object: {}", e.getMessage());
-            rollbackTransaction();
-        }
-        return null;
-    }
-
-    public void delete(T object) {
-        this.em.remove(object);
     }
 
     public T find(T object) {
         return em.find(specialization, object);
     }
 
-    protected void beginTransaction() {
+    public void save(T object) {
+        executeInTransaction(() -> {
+            em.persist(object);
+            return object;
+        });
+    }
+
+    public T update(T object) {
+        return executeInTransaction(() -> em.merge(object));
+    }
+
+    public void delete(T object) {
+        executeInTransaction(() -> {
+            em.remove(object);
+            return null;
+        });
+    }
+
+    private void beginTransaction() {
         if (!em.getTransaction().isActive()) {
             em.getTransaction().begin();
         }
@@ -98,11 +86,11 @@ public abstract class BaseDAO<T, E> implements Serializable {
 
     protected void commitTransaction() {
         try {
-            beginTransaction();
             em.getTransaction().commit();
         } catch (Exception e) {
             log.error("Error committing transaction: {}", e.getMessage());
             rollbackTransaction();
+            throw e;
         }
     }
 
@@ -113,6 +101,19 @@ public abstract class BaseDAO<T, E> implements Serializable {
             }
         } catch (Exception e) {
             log.error("Error rolling back transaction: {}", e.getMessage());
+        }
+    }
+
+    private <R> R executeInTransaction(TransactionAction<R> action) {
+        try {
+            beginTransaction();
+            R result = action.execute();
+            commitTransaction();
+            return result;
+        } catch (Exception e) {
+            log.error("Transaction failed: {}", e.getMessage());
+            rollbackTransaction();
+            throw new RuntimeException("Transaction failed", e);
         }
     }
 
@@ -127,7 +128,6 @@ public abstract class BaseDAO<T, E> implements Serializable {
         return session;
     }
 
-
     /**
      * Get the id of all results
      *
@@ -136,7 +136,8 @@ public abstract class BaseDAO<T, E> implements Serializable {
      * @throws UnsupportedOperationException if not implemented
      */
     public Collection<E> findAllOnlyIds(T filter) {
-        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+        throw new UnsupportedOperationException(
+                "Method findAllOnlyIds is not implemented in " + this.getClass().getName());
     }
 
     public abstract Collection<T> findAll(T object);

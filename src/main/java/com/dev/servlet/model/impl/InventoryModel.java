@@ -1,18 +1,18 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.model.Identifier;
-import com.dev.servlet.persistence.dao.InventoryDAO;
 import com.dev.servlet.dto.InventoryDTO;
+import com.dev.servlet.dto.TransferObject;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.InventoryMapper;
 import com.dev.servlet.model.impl.base.BaseModel;
-import com.dev.servlet.model.shared.BusinessShared;
 import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.domain.Inventory;
 import com.dev.servlet.model.pojo.domain.Product;
 import com.dev.servlet.model.pojo.enums.Status;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.model.shared.BusinessShared;
+import com.dev.servlet.persistence.dao.InventoryDAO;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +58,7 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<? extends TransferObject<Long>> getTransferClass() {
         return InventoryDTO.class;
     }
 

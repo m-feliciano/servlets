@@ -1,10 +1,10 @@
 package com.dev.servlet.model.impl.base;
 
+import com.dev.servlet.dto.TransferObject;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.ICrudRepository;
 import com.dev.servlet.model.Identifier;
 import com.dev.servlet.model.pojo.domain.User;
-import com.dev.servlet.model.pojo.records.KeyPair;
 import com.dev.servlet.model.pojo.records.Request;
 import com.dev.servlet.persistence.IPageRequest;
 import com.dev.servlet.persistence.IPageable;
@@ -101,7 +101,7 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      *
      * @return {@linkplain Class} of {@linkplain Identifier} type {@linkplain K}
      */
-    protected abstract Class<? extends Identifier<K>> getTransferClass();
+    protected abstract Class<? extends TransferObject<K>> getTransferClass();
 
     /**
      * Convert the object to the entity
@@ -109,7 +109,7 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @param object the object to be converted
      * @return {@linkplain T} the entity
      */
-    protected abstract T toEntity(Object object);
+    protected abstract <J> T toEntity(J object);
 
     protected User getUser(String token) {
         return token != null ? CryptoUtils.getUser(token) : null;
@@ -123,11 +123,8 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @author marcelo.feliciano
      */
     protected T getEntity(Request request) {
-        Object transferObject = getTransferObject(request);
-
-        return Optional.ofNullable(transferObject)
-                .map(this::toEntity)
-                .orElse(null);
+        TransferObject<K> object = getTransferObject(request);
+        return Optional.ofNullable(object).map(this::toEntity).orElse(null);
     }
 
     /**
@@ -137,33 +134,14 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
      * @return {@linkplain T} the entity
      * @author marcelo.feliciano
      */
-    protected Object getTransferObject(Request request) {
-        var optIdentifier = ClassUtil.createInstance(getTransferClass());
+    @SuppressWarnings("unchecked")
+    protected <R extends TransferObject<K>> R getTransferObject(Request request) {
+        var optional = ClassUtil.createInstance(getTransferClass());
+        if (optional.isEmpty()) return null;
 
-        return optIdentifier
-                .map(entity -> fillObjectData(entity, request.id(), request.body()))
-                .orElse(null);
-    }
-
-    /**
-     * Convert the transfer object to the entity
-     *
-     * @param object     the transfer object {@linkplain U}
-     * @param id         the entity id
-     * @param parameters {@linkplain List} of {@linkplain KeyPair}
-     * @param <U>        the transfer object
-     * @return {@linkplain Identifier} of {@linkplain K}-
-     * @author marcelo.feliciano
-     */
-    private <U extends Identifier<K>> Identifier<K> fillObjectData(U object, String id, List<KeyPair> parameters) {
-        if (id != null) {
-            Class<K> typeK = ClassUtil.extractType(this.getClass(), 2);
-            K objectK = ClassUtil.castWrapper(typeK, id);
-            object.setId(objectK);
-        }
-
-        ClassUtil.fillObject(object, parameters);
-        return object;
+        TransferObject<K> object = optional.get();
+        ClassUtil.fillObject(object, request.body());
+        return (R) object;
     }
 
     /**

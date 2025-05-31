@@ -1,6 +1,5 @@
 package com.dev.servlet.auth;
 
-import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.core.IServletDispatcher;
 import com.dev.servlet.util.CryptoUtils;
 import com.dev.servlet.util.EndpointParser;
@@ -52,8 +51,7 @@ public class Auth implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
-        UserDTO user = (UserDTO) request.getSession().getAttribute(USER);
-        String token = user != null ? user.getToken() : null;
+        String token = (String) request.getSession().getAttribute("token");
 
         if (isAuthorizedRequest(request, token)) {
             log.debug("Access to the service: {}, authorized", request.getRequestURI());

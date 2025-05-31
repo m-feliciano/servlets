@@ -1,8 +1,7 @@
 package com.dev.servlet.model.impl;
 
-import com.dev.servlet.model.Identifier;
-import com.dev.servlet.persistence.dao.CategoryDAO;
 import com.dev.servlet.dto.CategoryDTO;
+import com.dev.servlet.dto.TransferObject;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.mapper.CategoryMapper;
 import com.dev.servlet.model.impl.base.BaseModel;
@@ -10,6 +9,7 @@ import com.dev.servlet.model.pojo.domain.Category;
 import com.dev.servlet.model.pojo.enums.Status;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
+import com.dev.servlet.persistence.dao.CategoryDAO;
 import com.dev.servlet.util.CacheUtil;
 import com.dev.servlet.util.CollectionUtils;
 import lombok.Getter;
@@ -45,7 +45,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
     }
 
     @Override
-    protected Class<? extends Identifier<Long>> getTransferClass() {
+    protected Class<? extends TransferObject<Long>> getTransferClass() {
         return CategoryDTO.class;
     }
 

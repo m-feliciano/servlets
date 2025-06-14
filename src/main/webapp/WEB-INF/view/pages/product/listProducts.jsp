@@ -1,5 +1,5 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ page import="com.dev.servlet.adapter.IServletResponse" %>
+<%@ page import="com.dev.servlet.application.dto.response.IServletResponse" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
 <%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
@@ -52,7 +52,7 @@
                                         <c:choose>
                                             <c:when test="${empty product.url }">
                                                 <img class="img-thumbnail img-square-min"
-                                                     src="<c:url value='/assets/no_image_available.png'/>"
+                                                     src="<c:url value='/resources/assets/no_image_available.png'/>"
                                                      alt="no available">
                                             </c:when>
                                             <c:otherwise>

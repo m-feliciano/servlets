@@ -1,6 +1,6 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.adapter.IHttpResponse" %>
+<%@ page import="com.dev.servlet.application.dto.response.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%
@@ -53,7 +53,7 @@
             <div class="mb-3">
                 <label for="inputDescription" class="form-label">DESCRIPTION</label>
                 <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="Simple Description" readonly rows="4" cols="auto">
+                          placeholder="Simple Description" readonly rows="10" cols="auto">
                     ${ product.description }</textarea>
             </div>
             <c:if test="${ not empty product.url and not product.url eq '' }">
@@ -86,7 +86,7 @@
             <div class="mb-3">
                 <c:choose>
                     <c:when test="${ empty product.url }">
-                        <img src="<c:url value='/assets/no_image_available.png'/>"
+                        <img src="<c:url value='/resources/assets/no_image_available.png'/>"
                              class="img-thumbnail" alt="No available" width="60%" height="60%"/>
                     </c:when>
                     <c:otherwise>

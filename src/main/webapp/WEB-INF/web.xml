@@ -10,33 +10,33 @@
 
     <listener>
         <listener-class>
-            com.dev.servlet.adapter.listener.ContextListener
+            com.dev.servlet.core.listener.ContextListener
         </listener-class>
     </listener>
 
     <!-- filter chain order -->
     <filter>
-        <filter-name>PasswordEncryptionFilter</filter-name>
-        <filter-class>com.dev.servlet.auth.PasswordEncryptFilter</filter-class>
+        <filter-name>SecurityPasswordEncryptionFilter</filter-name>
+        <filter-class>com.dev.servlet.infrastructure.security.PasswordEncryptFilter</filter-class>
     </filter>
     <filter-mapping>
-        <filter-name>PasswordEncryptionFilter</filter-name>
+        <filter-name>SecurityPasswordEncryptionFilter</filter-name>
         <url-pattern>/api/*</url-pattern>
     </filter-mapping>
     <filter>
-        <filter-name>XSSFilter</filter-name>
-        <filter-class>com.dev.servlet.auth.XSSFilter</filter-class>
+        <filter-name>SecurityXSSFilter</filter-name>
+        <filter-class>com.dev.servlet.infrastructure.security.XSSFilter</filter-class>
     </filter>
     <filter-mapping>
-        <filter-name>XSSFilter</filter-name>
+        <filter-name>SecurityXSSFilter</filter-name>
         <url-pattern>/api/*</url-pattern>
     </filter-mapping>
     <filter>
-        <filter-name>AFUSER</filter-name>
-        <filter-class>com.dev.servlet.auth.Auth</filter-class>
+        <filter-name>SecurityAuthFilter</filter-name>
+        <filter-class>com.dev.servlet.infrastructure.security.Auth</filter-class>
     </filter>
     <filter-mapping>
-        <filter-name>AFUSER</filter-name>
+        <filter-name>SecurityAuthFilter</filter-name>
         <url-pattern>/api/*</url-pattern>
     </filter-mapping>
 </web-app>

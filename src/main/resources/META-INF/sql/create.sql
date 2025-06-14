@@ -9,7 +9,7 @@ create table tb_category
 create table tb_inventory
 (
     id          int8,
-    description varchar(255),
+    description TEXT,
     quantity    int4,
     status      varchar(1),
     product_id  int8,

@@ -1,5 +1,5 @@
+<%@ page import="com.dev.servlet.application.dto.response.IHttpResponse" %>
 <%@ include file="/WEB-INF/routes/category-routes.jspf" %>
-<%@ page import="com.dev.servlet.adapter.IHttpResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%

@@ -1,8 +1,8 @@
+<%@ page import="com.dev.servlet.application.dto.response.IServletResponse" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ include file="/WEB-INF/routes/inventory-routes.jspf" %>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
-<%@ page import="com.dev.servlet.adapter.IServletResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 
 <%

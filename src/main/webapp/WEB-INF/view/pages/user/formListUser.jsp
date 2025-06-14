@@ -10,7 +10,8 @@
                         <img src="${user.imgUrl}" alt="user" class="avatar-img rounded-circle">
                     </c:if>
                     <c:if test="${empty user.imgUrl or user.imgUrl eq ''}">
-                        <img src="<c:url value='/assets/avatar2.png'/>" alt="user" class="avatar-img rounded-circle">
+                        <img src="<c:url value='/resources/assets/avatar2.png'/>" alt="user"
+                             class="avatar-img rounded-circle">
                     </c:if>
                 </div>
                 <div class="col-md-9">

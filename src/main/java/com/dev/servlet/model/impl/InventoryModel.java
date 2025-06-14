@@ -123,7 +123,7 @@ public class InventoryModel extends BaseModel<Inventory, Long> {
         inventory.setStatus(Status.ACTIVE.getValue());
         inventory.setProduct(product);
 
-        super.save(inventory);
+        inventory = super.save(inventory);
 
         return InventoryMapper.full(inventory);
     }

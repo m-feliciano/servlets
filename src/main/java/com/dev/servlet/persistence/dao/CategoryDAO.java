@@ -85,14 +85,13 @@ public class CategoryDAO extends BaseDAO<Category, Long> {
      *
      * @param categories {@linkplain List} of {@linkplain Category}
      */
-//    @Override
-    public void saveAll(List<Category> categories) throws ServiceException {
+    @Override
+    public List<Category> saveAll(List<Category> categories) throws ServiceException {
         log.trace("");
-
-        Session session = getNewOpenSession();
 
         AtomicReference<String> errors = new AtomicReference<>();
 
+        Session session = getNewOpenSession();
         session.doWork(connection -> {
             String copies = String.join(", ", Collections.nCopies(3, "?"));
             //language=SQL
@@ -130,6 +129,8 @@ public class CategoryDAO extends BaseDAO<Category, Long> {
         } catch (Exception e) {
             session.getTransaction().rollback();
         }
+
+        return categories;
     }
 
     @Override

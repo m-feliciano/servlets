@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import static com.dev.servlet.util.ThrowableUtils.throwIfTrue;
@@ -104,8 +105,12 @@ public class ProductModel extends BaseModel<Product, Long> {
         product.setRegisterDate(new Date());
         product.setStatus(Status.ACTIVE.getValue());
 
-        super.save(product);
+        product = super.save(product);
         return ProductMapper.full(product);
+    }
+
+    public List<Product> saveAll(List<Product> products) throws ServiceException {
+        return baseDAO.saveAll(products);
     }
 
     /**

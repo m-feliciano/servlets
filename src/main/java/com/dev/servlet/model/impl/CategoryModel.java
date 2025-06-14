@@ -77,7 +77,7 @@ public class CategoryModel extends BaseModel<Category, Long> {
 
         Category category = this.getEntity(request);
         category.setStatus(Status.ACTIVE.getValue());
-        super.save(category);
+        category = super.save(category);
 
         CacheUtils.clear(CACHE_KEY, request.token());
 

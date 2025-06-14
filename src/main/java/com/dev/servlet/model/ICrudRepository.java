@@ -39,7 +39,7 @@ public interface ICrudRepository<T extends Identifier<K>, K> extends IPagination
      *
      * @param object the object
      */
-    void save(T object);
+    T save(T object);
 
     /**
      * Update an object.

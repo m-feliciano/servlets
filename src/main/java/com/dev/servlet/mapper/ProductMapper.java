@@ -2,8 +2,12 @@ package com.dev.servlet.mapper;
 
 import com.dev.servlet.dto.ProductDTO;
 import com.dev.servlet.model.pojo.domain.Product;
+import com.dev.servlet.model.pojo.enums.Status;
+import com.dev.servlet.web.dto.ProductWebScrapeDTO;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ProductMapper {
@@ -89,6 +93,20 @@ public final class ProductMapper {
         product.setDescription(dto.getDescription());
         product.setUser(UserMapper.onlyId(dto.getUser()));
         product.setCategory(CategoryMapper.from(dto.getCategory()));
+        return product;
+    }
+
+    public static Product fromWebScrapeDTO(ProductWebScrapeDTO webScrapeDTO) {
+        if (webScrapeDTO == null) return null;
+
+        Product product = new Product();
+        product.setName(webScrapeDTO.getTitle());
+        product.setPrice(BigDecimal.valueOf(webScrapeDTO.getPrice()));
+        product.setDescription(webScrapeDTO.getDescription());
+        product.setUrl(webScrapeDTO.getThumbnail());
+        product.setRegisterDate(webScrapeDTO.getPublishDate());
+//        product.setCategory(new Category(webScrapeDTO.getCategory()));
+        product.setStatus(Status.ACTIVE.getValue());
         return product;
     }
 }

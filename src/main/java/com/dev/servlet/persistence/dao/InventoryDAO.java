@@ -140,16 +140,14 @@ public class InventoryDAO extends BaseDAO<Inventory, Long> {
      * Register without commit
      *
      * @param inventories {@linkplain List} of {@linkplain Inventory}
-     * @throws ServiceException
      */
-//    @Override
-    public void saveAll(List<Inventory> inventories) throws ServiceException {
+    @Override
+    public List<Inventory> saveAll(List<Inventory> inventories) throws ServiceException {
         log.trace("");
-
-        Session session = getNewOpenSession();
 
         AtomicReference<String> errors = new AtomicReference<>();
 
+        Session session = getNewOpenSession();
         session.doWork(connection -> {
             String copies = String.join(", ", Collections.nCopies(5, "?"));
             //language=SQL
@@ -189,6 +187,8 @@ public class InventoryDAO extends BaseDAO<Inventory, Long> {
         } catch (Exception e) {
             session.getTransaction().rollback();
         }
+
+        return inventories;
     }
 
     @Override

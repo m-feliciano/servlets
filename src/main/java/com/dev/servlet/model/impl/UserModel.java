@@ -104,7 +104,7 @@ public class UserModel extends BaseModel<User, Long> {
         newUser.setStatus(Status.ACTIVE.getValue());
         newUser.setPerfis(List.of(RoleType.DEFAULT.getCode()));
 
-        super.save(newUser);
+        newUser = super.save(newUser);
 
         return UserMapper.full(newUser);
     }

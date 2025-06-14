@@ -62,8 +62,8 @@ public abstract class BaseModel<T extends Identifier<K>, K> implements ICrudRepo
     }
 
     @Override
-    public void save(T object) {
-        baseDAO.save(object);
+    public T save(T object) {
+        return baseDAO.save(object);
     }
 
     @Override

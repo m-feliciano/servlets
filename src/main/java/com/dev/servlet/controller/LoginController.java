@@ -1,8 +1,9 @@
 package com.dev.servlet.controller;
 
-import com.dev.servlet.controller.base.BaseController;
 import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.Property;
 import com.dev.servlet.adapter.RequestMapping;
+import com.dev.servlet.controller.base.BaseController;
 import com.dev.servlet.dto.UserDTO;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.impl.LoginModel;
@@ -10,7 +11,6 @@ import com.dev.servlet.model.pojo.domain.User;
 import com.dev.servlet.model.pojo.enums.RequestMethod;
 import com.dev.servlet.model.pojo.records.HttpResponseImpl;
 import com.dev.servlet.model.pojo.records.Request;
-import com.dev.servlet.util.PropertiesUtil;
 import com.dev.servlet.validator.Constraints;
 import com.dev.servlet.validator.Validator;
 import lombok.NoArgsConstructor;
@@ -24,13 +24,11 @@ import static com.dev.servlet.util.CryptoUtils.isValidToken;
 @Controller(path = "/login")
 public final class LoginController extends BaseController<User, Long> {
 
-    private String homepage;
     private static final String FORWARD_PAGES_FORM_LOGIN_JSP = "forward:pages/formLogin.jsp";
     private static final String FORWARD_PAGES_USER_FORM_CREATE_USER_JSP = "forward:pages/user/formCreateUser.jsp";
 
     @PostConstruct
     public void init() {
-        homepage = PropertiesUtil.getProperty("homepage");
     }
 
     /**
@@ -50,7 +48,8 @@ public final class LoginController extends BaseController<User, Long> {
      * @return {@linkplain IHttpResponse} with the updated user
      */
     @RequestMapping(value = "/form", requestAuth = false)
-    public IHttpResponse<String> form(Request request) {
+    public IHttpResponse<String> form(Request request,
+                                      @Property("homepage") String homepage) {
         String next;
         if (isValidToken(request.token())) {
             next = "redirect:/" + homepage;
@@ -81,7 +80,10 @@ public final class LoginController extends BaseController<User, Long> {
                             @Constraints(minLength = 5, maxLength = 30, message = "Password must have at least {0} characters")
                     })
             })
-    public IHttpResponse<UserDTO> login(Request request, LoginModel model) throws ServiceException {
+    public IHttpResponse<UserDTO> login(Request request,
+                                        LoginModel model,
+                                        @Property("homepage") String homepage) throws ServiceException {
+
         UserDTO user = model.login(request);
         return okHttpResponse(user, "redirect:/" + homepage);
     }

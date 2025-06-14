@@ -104,14 +104,13 @@ public class ProductDAO extends BaseDAO<Product, Long> {
      *
      * @param products {@linkplain List} of {@linkplain Product}
      */
-//    @Override
-    public void saveAll(List<Product> products) throws ServiceException {
+    @Override
+    public List<Product> saveAll(List<Product> products) throws ServiceException {
         log.trace("");
-
-        Session session = getNewOpenSession();
 
         AtomicReference<String> errors = new AtomicReference<>();
 
+        Session session = getNewOpenSession();
         session.doWork(connection -> {
             String copies = String.join(", ", Collections.nCopies(8, "?"));
             //language=SQL
@@ -127,7 +126,13 @@ public class ProductDAO extends BaseDAO<Product, Long> {
                     ps.setBigDecimal(5, product.getPrice());
                     ps.setLong(6, product.getUser().getId());
                     ps.setString(7, Status.ACTIVE.getValue());
-                    ps.setLong(8, product.getCategory().getId());
+
+                    if (product.getCategory() != null) {
+                        ps.setLong(8, product.getCategory().getId());
+                    } else {
+                        ps.setNull(8, java.sql.Types.BIGINT);
+                    }
+
                     ps.addBatch();
                 }
 
@@ -155,6 +160,8 @@ public class ProductDAO extends BaseDAO<Product, Long> {
         } catch (Exception e) {
             session.getTransaction().rollback();
         }
+
+        return products;
     }
 
     public BigDecimal calculateTotalPriceFor(Product filter) {

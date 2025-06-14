@@ -127,7 +127,6 @@ All endpoints follow the pattern: `/api/v{version}/{resource}/{action}`
 |--------|-------------------------------|-----------------------|
 | GET    | /api/v1/product/list          | List all products     |
 | GET    | /api/v1/product/list/{id}     | Product details       |
-| POST   | /api/v1/product/create        | Create product        |
 | POST   | /api/v1/product/update/{id}   | Update product        |
 
 > See [Endpoints by Controller](#endpoints-by-controller) for the full list.
@@ -256,7 +255,7 @@ public final class ProductController extends BaseController<Product, Long> {
                            @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                    }),
                    @Validator(values = "description", constraints = {
-                           @Constraints(minLength = 5, maxLength = 255, message = "Description must be between {0} and {1} characters")
+                           @Constraints(minLength = 5, message = "Description must be at least {0} characters"),
                    })
            })
    public IHttpResponse<Void> update(Request request, ProductModel model) throws ServiceException {
@@ -264,32 +263,6 @@ public final class ProductController extends BaseController<Product, Long> {
       // No Content
       return newHttpResponse(204, redirectTo(product.getId()));
    }
-}
-```
-
----
-
-## Example: Register User Endpoint
-
-```java
-@RequestMapping(
-    value = "/registerUser",
-    method = RequestMethod.POST,
-    apiVersion = "v2", // API versioning
-    requestAuth = false,
-    validators = {
-        @Validator(values = "login", constraints = {
-            @Constraints(isEmail = true, message = "Login must be a valid email")
-        }),
-        @Validator(values = {"password", "confirmPassword"},
-            constraints = {
-                @Constraints(minLength = 5, message = "Password must have at least {0} characters"),
-                @Constraints(maxLength = 30, message = "Password must have at most {0} characters"),
-            }),
-    })
-public IHttpResponse<Void> register(Request request, UserModel model) { // the model is injected by the framework
-    model.register(request);
-    return newHttpResponse(201, "redirect:/api/v1/login/form"); // Created
 }
 ```
 
@@ -307,12 +280,26 @@ public IHttpResponse<Void> register(Request request, UserModel model) { // the m
             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
         })
     })
-public IHttpResponse<Void> delete(Request request, UserModel model) {
-    model.delete(request);
-    return HttpResponse.<Void>ok().next(forwardTo("formLogin")).build();
-}
+   public IHttpResponse<Void> delete(Request request, UserModel model) {
+       model.delete(request);
+       return HttpResponse.<Void>ok().next(forwardTo("formLogin")).build();
+   }
 ```
 
+## Scraping API Example
+
+```java
+   @RequestMapping(value = "/scrape", method = RequestMethod.GET)
+   public IHttpResponse<Void> scrape(Request request, 
+                                     ProductModel model,
+                                     @Property("scrape.product.url") String url) throws Exception { // Inject URL from properties
+
+      var webScrapeRequest = new WebScrapeRequest(WebScrapeServiceEnum.PRODUCT, url, null);
+      var webScrapeService = new WebScrapeService<List<ProductWebScrapeDTO>>(webScrapeRequest);
+
+      Optional<List<ProductWebScrapeDTO>> response = webScrapeEngine.run();
+    }
+```
 ---
 
 ## Layouts

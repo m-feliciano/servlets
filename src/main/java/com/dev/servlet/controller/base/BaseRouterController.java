@@ -1,15 +1,18 @@
 package com.dev.servlet.controller.base;
 
 import com.dev.servlet.adapter.IHttpResponse;
+import com.dev.servlet.adapter.Property;
 import com.dev.servlet.adapter.RequestMapping;
 import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.impl.base.BaseModel;
 import com.dev.servlet.model.pojo.records.Request;
 import com.dev.servlet.util.BeanUtil;
 import com.dev.servlet.util.EndpointParser;
+import com.dev.servlet.util.PropertiesUtil;
 import com.dev.servlet.validator.RequestValidator;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,11 +82,20 @@ public abstract class BaseRouterController {
      * @return Array of method arguments
      */
     private Object[] prepareMethodArguments(RouteMapping mapping, Request request) throws ServiceException {
+        Method method = mapping.method();
+        Parameter[] parameters = method.getParameters();
         Object[] args = new Object[mapping.parameterTypes().length];
 
         for (int i = 0; i < mapping.parameterTypes().length; i++) {
-            Class<?> parameter = mapping.parameterTypes()[i];
-            args[i] = resolveArgument(parameter, request);
+            Parameter parameter = parameters[i];
+            if (parameter.isAnnotationPresent(Property.class)) {
+                String propertyKey = parameter.getAnnotation(Property.class).value();
+                args[i] = PropertiesUtil.getProperty(propertyKey, "");
+
+            } else {
+                Class<?> parameterType = mapping.parameterTypes()[i];
+                args[i] = resolveArgument(parameterType, request);
+            }
         }
 
         return args;

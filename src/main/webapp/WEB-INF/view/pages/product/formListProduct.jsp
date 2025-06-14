@@ -53,7 +53,7 @@
             <div class="mb-3">
                 <label for="inputDescription" class="form-label">DESCRIPTION</label>
                 <textarea name="description" class="form-control" id="inputDescription"
-                          placeholder="Simple Description" readonly rows="4" cols="auto">
+                          placeholder="Simple Description" readonly rows="10" cols="auto">
                     ${ product.description }</textarea>
             </div>
             <c:if test="${ not empty product.url and not product.url eq '' }">

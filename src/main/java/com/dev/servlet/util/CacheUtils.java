@@ -8,8 +8,6 @@ import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ExpiryPolicyBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -19,17 +17,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unchecked")
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Slf4j
 public final class CacheUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(CacheUtils.class);
-
     private static final CacheManager cacheManager;
     private static final ConcurrentMap<String, Cache<String, Container>> tokenCaches = new ConcurrentHashMap<>();
-    private static final long EXPIRATION_MINUTES = 1440L; // 1 day
+    private static final long EXPIRATION_MINUTES = TimeUnit.DAYS.toMinutes(1);
+
+    private static final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor();
+    private static final ConcurrentMap<String, Long> lastAccessMap = new ConcurrentHashMap<>();
+    private static final long CACHE_IDLE_TIMEOUT_MINUTES = 60; // configurable
 
     private record Container(Object data) implements Serializable {
         @Serial
@@ -38,7 +41,12 @@ public final class CacheUtils {
 
     static {
         cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
-        logger.info("Ehcache CacheManager initialized");
+        log.info("Ehcache CacheManager initialized");
+        // Start cleanup task
+        cleaner.scheduleAtFixedRate(
+                CacheUtils::cleanupUnusedCaches,
+                CACHE_IDLE_TIMEOUT_MINUTES, CACHE_IDLE_TIMEOUT_MINUTES,
+                TimeUnit.MINUTES);
     }
 
     /**
@@ -57,9 +65,11 @@ public final class CacheUtils {
         CacheConfigurationBuilder<String, Container> config = cacheConfigurationBuilder();
         cacheManager.createCache(cacheName, config);
 
-        logger.info("Created new cache for token: {}", shortTokenForKey(token));
+        log.info("Created new cache for token: {}", shortTokenForKey(token));
         Cache<String, Container> cache = cacheManager.getCache(cacheName, String.class, Container.class);
         tokenCaches.put(token, cache);
+
+        lastAccessMap.put(token, System.currentTimeMillis());
         return cache;
     }
 
@@ -90,7 +100,7 @@ public final class CacheUtils {
         String shortToken = shortTokenForKey(token);
 
         getOrCreateCache(shortToken).put(key, new Container(List.copyOf(collection)));
-        logger.debug("Cached data for key='{}', token='{}'", key, shortTokenForKey(token));
+        log.debug("Cached data for key='{}', token='{}'", key, shortTokenForKey(token));
     }
 
     /**
@@ -105,7 +115,7 @@ public final class CacheUtils {
         String shortToken = shortTokenForKey(token);
 
         getOrCreateCache(shortToken).put(key, new Container(object));
-        logger.debug("Cached object for key='{}', token='{}'", key, shortToken);
+        log.debug("Cached object for key='{}', token='{}'", key, shortToken);
     }
 
     /**
@@ -121,7 +131,7 @@ public final class CacheUtils {
         String shortToken = shortTokenForKey(token);
         Container value = getOrCreateCache(shortToken).get(key);
 
-        logger.debug("Retrieved data for key='{}', token='{}': {}", key, shortToken, value != null ? "HIT" : "MISS");
+        log.debug("Retrieved data for key='{}', token='{}': {}", key, shortToken, value != null ? "HIT" : "MISS");
 
         if (value != null && value.data() instanceof List) {
             return (List<T>) value.data();
@@ -146,7 +156,7 @@ public final class CacheUtils {
         String shortToken = shortTokenForKey(token);
 
         Container value = getOrCreateCache(shortToken).get(key);
-        logger.debug("Retrieved data for key='{}', token='{}': {}", key, shortToken, value != null ? "HIT" : "MISS");
+        log.debug("Retrieved data for key='{}', token='{}': {}", key, shortToken, value != null ? "HIT" : "MISS");
 
         if (value == null) {
             return null;
@@ -164,7 +174,7 @@ public final class CacheUtils {
     public static void clear(String key, String token) {
         String shortToken = shortTokenForKey(token);
         getOrCreateCache(shortToken).remove(key);
-        logger.info("Cleared cache entry for key='{}', token='{}'", key, shortToken);
+        log.info("Cleared cache entry for key='{}', token='{}'", key, shortToken);
     }
 
     /**
@@ -177,7 +187,7 @@ public final class CacheUtils {
         String cacheName = "cache_" + shortToken;
         cacheManager.removeCache(cacheName);
         tokenCaches.remove(shortToken);
-        logger.info("Cleared all cache entries for token='{}'", shortToken);
+        log.info("Cleared all cache entries for token='{}'", shortToken);
     }
 
     private static String shortTokenForKey(String token) {
@@ -187,9 +197,29 @@ public final class CacheUtils {
     /**
      * Closes the cache manager and clears all caches.
      */
+    // Cleanup method
+    private static void cleanupUnusedCaches() {
+        long now = System.currentTimeMillis();
+
+        for (var entry : lastAccessMap.entrySet()) {
+            if (now - entry.getValue() > TimeUnit.MINUTES.toMillis(CACHE_IDLE_TIMEOUT_MINUTES)) {
+                String token = entry.getKey();
+                String cacheName = "cache_" + token;
+                cacheManager.removeCache(cacheName);
+                tokenCaches.remove(token);
+                lastAccessMap.remove(token);
+
+                log.info("Evicted unused cache for token='{}'", token);
+            }
+        }
+    }
+
+    // In close(), also shutdown the cleaner
     public static void close() {
         cacheManager.close();
         tokenCaches.clear();
-        logger.info("CacheManager closed and all caches cleared");
+        lastAccessMap.clear();
+        cleaner.shutdownNow();
+        log.info("CacheManager closed and all caches cleared");
     }
 }

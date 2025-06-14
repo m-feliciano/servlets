@@ -1,5 +1,6 @@
 package com.dev.servlet.persistence.dao.base;
 
+import com.dev.servlet.exception.ServiceException;
 import com.dev.servlet.model.pojo.records.Sort;
 import com.dev.servlet.persistence.IPageRequest;
 import com.dev.servlet.util.ClassUtil;
@@ -18,6 +19,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Base DAO
@@ -60,10 +62,19 @@ public abstract class BaseDAO<T, E> implements Serializable {
         return em.find(specialization, object);
     }
 
-    public void save(T object) {
-        executeInTransaction(() -> {
+    public T save(T object) {
+        return executeInTransaction(() -> {
             em.persist(object);
             return object;
+        });
+    }
+
+    public List<T> saveAll(List<T> products) throws ServiceException {
+        return executeInTransaction(() -> {
+            for (T product : products) {
+                em.persist(product);
+            }
+            return products;
         });
     }
 

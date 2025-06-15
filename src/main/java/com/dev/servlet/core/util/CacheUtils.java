@@ -219,6 +219,21 @@ public final class CacheUtils {
         log.info("CacheManager closed and all caches cleared");
     }
 
+    public static void clearCacheKeyPrefix(String cacheKeyPrefix, String cacheToken) {
+        String shortToken = shortTokenForKey(cacheToken);
+        Cache<String, Container> cache = tokenCaches.get(shortToken);
+        if (cache != null) {
+            cache.forEach(entry -> {
+                if (entry.getKey().startsWith(cacheKeyPrefix)) {
+                    cache.remove(entry.getKey());
+                    log.info("Cleared cache entry with prefix '{}' for token='{}'", cacheKeyPrefix, shortToken);
+                }
+            });
+        } else {
+            log.warn("No cache found for token='{}' to clear entries with prefix '{}'", shortToken, cacheKeyPrefix);
+        }
+    }
+
     private record Container(Object data) implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;

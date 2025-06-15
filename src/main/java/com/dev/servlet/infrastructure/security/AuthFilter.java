@@ -27,7 +27,7 @@ import static com.dev.servlet.core.util.CryptoUtils.isValidToken;
  */
 @Slf4j
 @NoArgsConstructor
-public class Auth implements Filter {
+public class AuthFilter implements Filter {
 
     public static final String LOGINPAGE = "loginpage";
 
@@ -42,7 +42,8 @@ public class Auth implements Filter {
 
     @PostConstruct
     public void init() {
-        preAuthorizedPath = PropertiesUtil.getProperty("auth.authorized", List.of("/login,/user"));
+        List<String> defaultAuthorized = List.of("LoginController,UserController");
+        preAuthorizedPath = PropertiesUtil.getProperty("auth.authorized", defaultAuthorized);
         log.info("Auth filter initialized with pre-authorized paths: {}", preAuthorizedPath);
     }
 

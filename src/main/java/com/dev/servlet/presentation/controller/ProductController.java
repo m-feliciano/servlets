@@ -7,6 +7,7 @@ import com.dev.servlet.application.dto.request.Request;
 import com.dev.servlet.application.dto.response.HttpResponse;
 import com.dev.servlet.application.dto.response.IHttpResponse;
 import com.dev.servlet.application.dto.response.IServletResponse;
+import com.dev.servlet.config.CachedProductService;
 import com.dev.servlet.core.annotation.Constraints;
 import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.Property;
@@ -14,12 +15,12 @@ import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.ProductMapper;
+import com.dev.servlet.core.util.CacheUtils;
 import com.dev.servlet.domain.model.pojo.domain.Product;
 import com.dev.servlet.domain.model.pojo.domain.User;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
 import com.dev.servlet.domain.model.pojo.enums.Status;
 import com.dev.servlet.domain.service.CategoryService;
-import com.dev.servlet.domain.service.ProductService;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeRequest;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeService;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeServiceRegistry;
@@ -48,7 +49,7 @@ import static com.dev.servlet.core.util.CryptoUtils.getUser;
 @Controller("product")
 public class ProductController extends BaseController<Product, Long> {
 
-    private ProductService productService;
+    private CachedProductService productService;
     private CategoryService categoryService;
 
     private static Product prepareProductToSave(Product product, User user) {
@@ -60,7 +61,7 @@ public class ProductController extends BaseController<Product, Long> {
     }
 
     @Inject
-    public void setProductService(ProductService productService) {
+    public void setProductService(CachedProductService productService) {
         this.productService = productService;
     }
 
@@ -197,7 +198,7 @@ public class ProductController extends BaseController<Product, Long> {
                             @Constraints(minLength = 3, maxLength = 50, message = "Name must be between {0} and {1} characters")
                     }),
                     @Validator(values = "description", constraints = {
-                            @Constraints(minLength = 5, message = "Description must be at least {0} characters"),
+                            @Constraints(minLength = 5, maxLength = 1024, message = "Description must be between {0} and {1} characters")
                     }),
                     @Validator(values = "price", constraints = {
                             @Constraints(min = 0, message = "Price must be greater than or equal to {0}")
@@ -274,7 +275,9 @@ public class ProductController extends BaseController<Product, Long> {
                         .map(product -> prepareProductToSave(product, user))
                         .toList();
                 try {
-                    products = productService.saveAll(products);
+                    products = productService.saveAll(products, request.token());
+                    CacheUtils.clearCacheKeyPrefix("product", request.token());
+
                 } catch (ServiceException e) {
                     throw new RuntimeException(e);
                 }

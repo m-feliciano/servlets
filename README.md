@@ -25,8 +25,14 @@
   - [📑 Endpoints by Controller](#-endpoints-by-controller)
   - [🧩 Development Patterns](#-development-patterns)
   - [❓ FAQ](#-faq)
-  - [📝 Controller Example](#-controller-example)
-- [2. 🕸️ Web Scraping Module](#2-️-web-scraping-module)
+  - [���� Controller Example](#-controller-example)
+- [3. 🗃️ Caching Architecture](#3-️-caching-architecture)
+    - [🔄 Cache Implementation](#-cache-implementation)
+    - [🏗️ Decorator Pattern](#️-decorator-pattern)
+    - [📊 Cache Flow Diagram](#-cache-flow-diagram)
+    - [💼 User-Specific Caching](#-user-specific-caching)
+    - [🧠 Cache Eviction Strategy](#-cache-eviction-strategy)
+- [4. 🕸️ Web Scraping Module](#4-️-web-scraping-module)
   - [🚦 Overview](#-overview)
   - [🗺️ Extension Flow](#-extension-flow)
   - [🛠️ Step by Step](#️-step-by-step)
@@ -63,21 +69,34 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant User
+    participant Auth as "Auth Filter"
+    participant ServletDispatcher as "Dispatcher (Adapter)"
+    participant IHttpExecutor
     participant Controller
     participant Service
-    participant Repository
+    participant Repository as "Data Access Layer"
     participant Database
-    User->>Controller: HTTP Request
-    Controller->>Service: Call Service
-    Service->>Repository: Query
-    Repository->>Database: SQL
-    Database-->>Repository: Result
-    Repository-->>Service: Data
-    Service-->>Controller: Response
-    Controller-->>User: HTTP Response
+    User ->> Auth: HTTP Servlet Request
+    Auth ->> ServletDispatcher: Dispatch request
+    ServletDispatcher ->> IHttpExecutor: Adapt to internal request
+    IHttpExecutor ->> Controller: Dispatch to controller
+    Controller ->> Service: Call Service
+    Service ->> Repository: Query
+    Repository ->> Database: SQL
+    Database -->> Repository: Result
+    Repository -->> Service: Data
+    Service -->> Controller: DTO response
+    Controller -->> IHttpExecutor: Http Response
+    IHttpExecutor -->> ServletDispatcher: Adapt to HTTP Servlet Response
+    ServletDispatcher -->> Auth: Forward/Redirect
+    Auth -->> User: HTTP Servlet Response
 ```
 
-*Description: This diagram illustrates the flow of an HTTP request, from the user to the database and back, passing through controller, service, and repository.*
+*Description: This diagram illustrates the flow of an HTTP Servlet request and response through the authentication
+filter, dispatcher (adapter), internal executor, controller, service, repository, and database. The Auth Filter
+intercepts the request for authentication and authorization before passing it to the dispatcher, which adapts the
+HttpServletRequest/HttpServletResponse to the internal request/response model. The response is then processed and
+returned through the same layers, ensuring security and proper adaptation between the servlet and application layers.*
 
 ## ✨ Main Features
 
@@ -267,12 +286,12 @@ See the section [Endpoints by Controller](#endpoints-by-controller) for a comple
 
 ### 🔑 LoginController
 
-| ⚡ Method | 🌐 Endpoint                   | 🔐 Auth | 📝 Notes             |
-|----------|-------------------------------|---------|----------------------|
-| 🟢 GET   | /api/v1/login/registerPage    | 🔓 No (Public)   | Registration form    |
-| 🟢 GET   | /api/v1/login/form            | 🔓 No (Public)   | Login form           |
-| 🟠 POST  | /api/v1/login/login           | 🔓 No (Public)   | Perform login        |
-| 🟠 POST  | /api/v1/login/logout          | 🔒 Yes (Authentication required)  | Perform logout       |
+| ⚡ Method | 🌐 Endpoint                | 🔐 Auth                          | 📝 Notes          |
+|----------|----------------------------|----------------------------------|-------------------|
+| 🟢 GET   | /api/v1/login/registerPage | 🔓 No (Public)                   | Registration form |
+| 🟢 GET   | /api/v1/login/form         | 🔓 No (Public)                   | Login form        |
+| 🟠 POST  | /api/v1/login/login        | 🔓 No (Public)                   | Perform login     |
+| ��� POST | /api/v1/login/logout       | 🔒 Yes (Authentication required) | Perform logout    |
 
 ---
 
@@ -333,73 +352,171 @@ public final class ProductController extends BaseController<Product, Long> {
 
 ---
 
-# 2. 🕸️ Web Scraping Module
+# 3. 🗃️ Caching Architecture
 
-> ⚡ **Extensible module for integrating multiple external scrapers, secure and easy to evolve!**
+> ⚡ **Robust caching system using the Decorator pattern to optimize performance and scale the application!**
 
----
+The caching solution implemented in this project uses the **Decorator Pattern** to add caching capabilities to existing
+service classes without modifying their original code.
 
-## 🚦 Overview
+## 🔄 Cache Implementation
 
-- 🔄 Based on **generics** for multiple types of scraping.
-- ➕ Add new scrapers without changing the core.
-- 🧩 Service registration and delegation.
+The cache system is implemented in three main components:
 
----
+1. **CacheUtils** - Central cache utility that manages the storage and retrieval of objects
+2. **CachedServiceDecorator** - Generic decorator that adds cache behavior to any repository
+3. **CachedProductService** - Specific implementation that uses per-user caching for products
 
-## 🗺️ Extension Flow
+The system utilizes the Ehcache library to manage in-memory storage, with support for:
+
+- Automatic time-based expiration (TTL)
+- Manual invalidation of specific entries
+- Separate storage by user token for isolation
+- Support for complex objects and collections
+
+## 🏗️ Decorator Pattern
+
+The Decorator pattern is implemented through the `CachedServiceDecorator<T, K>` class, which wraps any implementation of
+`ICrudRepository<T, K>`. This pattern allows:
+
+1. **Adding behavior** without altering the original implementation
+2. **Dynamic composition** of functionality
+3. **Transparency** for the client using the service
 
 ```mermaid
-flowchart TD
-    A([🧑‍💻 Implement IWebScrapeService<T>]) --> B([⚙️ Scraping logic])
-    B --> C([📚 Register in WebScrapeServiceRegistry])
-    C --> D([🚀 Use via WebScrapeService<T>])
-```
-
----
-
-## 🛠️ Step by Step
-
-1. 🧑‍💻 **Implement the interface**
-   ```java
-   public class MyCustomScraper implements IWebScrapeService<MyDTO> {
-       @Override
-       public Optional<MyDTO> scrape(WebScrapeRequest request) {
-           // Your scraping logic here
-       }
-   }
-   ```
-2. 📚 **Register the service**
-   ```java
-   registry.registerService("my-custom", new MyCustomScraper());
-   ```
-3. 🚀 **Use the service**
-   ```java
-   WebScrapeService<MyDTO> service = new WebScrapeService<>(registry);
-   Optional<MyDTO> result = service.run(request);
-   ```
-
----
-
-## 🎯 Example scraper response
-
-```json
-{
-  "order": "asc",
-  "total_results": 28,
-  "next_url": "https://web-scraping.dev/api/products?page=6&order=asc",
-  "results": [
-    {
-      "name": "Product A",
-      "price": 99.90,
-      "url": "https://site.com/product-a",
-      "category": "category"
-    }
-  ],
-  "page_number": 5,
-  "page_size": 5,
-  "page_total": 6
+classDiagram
+    class ICrudRepository~T,K~ {
+<<interface>>
++findById(K id) T
++findAll(T filter) Collection~T~
++save(T object) T
++update(T object) T
++delete(T object) void
 }
+
+class ConcreteRepository {
++findById(K id) T
++findAll(T filter) Collection~T~
++save(T object) T
++update(T object) T
++delete(T object) void
+}
+
+class CachedServiceDecorator~T, K~ {
+-ICrudRepository~T,K~ decorated
+-String cacheKeyPrefix
+-String cacheToken
++findById(K id) T
++findAll(T filter) Collection~T~
++save(T object) T
++update(T object) T
++delete(T object) void
++invalidateCache(T entity) void
+-buildPageRequestCacheKey(IPageRequest) String
+}
+
+ICrudRepository <|.. ConcreteRepository
+ICrudRepository <|.. CachedServiceDecorator
+CachedServiceDecorator o-- ICrudRepository: decorates >
 ```
 
-[Back to top](#full-stack-java-ee-web-application)
+The diagram above shows how `CachedServiceDecorator` implements the same interface as the concrete repository, allowing
+transparent substitution and the addition of caching behavior.
+
+## 📊 Cache Flow Diagram
+
+The cache access flow follows a check, read, and store pattern:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant CachedService as CachedServiceDecorator
+    participant CacheUtils
+    participant Repository as ConcreteRepository
+    participant Database
+    Client ->> CachedService: findById(id)
+    CachedService ->> CacheUtils: getObject(cacheKey, token)
+
+    alt Cache hit
+        CacheUtils -->> CachedService: Return cached entity
+        CachedService -->> Client: Return entity
+    else Cache miss
+        CacheUtils -->> CachedService: Return null
+        CachedService ->> Repository: findById(id)
+        Repository ->> Database: SELECT * FROM entity WHERE id = ?
+        Database -->> Repository: Entity data
+        Repository -->> CachedService: Return entity
+        CachedService ->> CacheUtils: setObject(cacheKey, token, entity)
+        CachedService -->> Client: Return entity
+    end
+```
+
+For write operations (`save`, `update`, `delete`), the flow includes cache invalidation:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant CachedService as CachedServiceDecorator
+    participant Repository as ConcreteRepository
+    participant CacheUtils
+    participant Database
+    Client ->> CachedService: save(entity)
+    CachedService ->> Repository: save(entity)
+    Repository ->> Database: INSERT/UPDATE entity
+    Database -->> Repository: Entity with ID
+    Repository -->> CachedService: Return entity
+    CachedService ->> CacheUtils: invalidateCache(entity)
+    CacheUtils ->> CacheUtils: clear related cache entries
+    CachedService -->> Client: Return entity
+```
+
+## 💼 User-Specific Caching
+
+An important feature of the implementation is cache isolation by user, through the `CachedProductService` class:
+
+```mermaid
+classDiagram
+    class ProductService {
+        +create(Request) ProductDTO
+        +update(Request) ProductDTO
+        +delete(Request) void
+        +getById(Request) ProductDTO
+        +findAll(Request) Collection~Long~
+    }
+
+    class CachedProductService {
+        -Map~String,CachedServiceDecorator~ userCacheDecorators
+        -ProductService delegateService
+        +getDecoratorForToken(String) CachedServiceDecorator
+        +create(Request) ProductDTO
+        +update(Request) ProductDTO
+        +delete(Request) void
+        +getById(Request) ProductDTO
+        +findAll(Request) Collection~Long~
+        +clearCache(String) void
+    }
+
+    ProductService <|-- CachedProductService
+```
+
+The `CachedProductService` maintains a map of decorators per user token, ensuring that:
+
+1. Each user has their own isolated cache space
+2. Updates by one user do not affect the cache of other users
+3. A user's session can be completely invalidated if needed
+
+## 🧠 Cache Eviction Strategy
+
+The system implements various invalidation strategies to maintain consistency:
+
+1. **Entity-based invalidation** - When changing an entity, all related cache entries are invalidated
+2. **Collection invalidation** - When changing any entity, cached collections are invalidated
+3. **User-based invalidation** - A user's cache can be completely cleared on logout
+4. **Automatic expiration** - Cache entries automatically expire after a configurable period
+5. **Idle cache cleaning** - Unused caches are periodically removed to free up memory
+
+---
+
+The implemented caching solution significantly increases system performance, reducing database load and improving
+response times, especially for frequent read operations. Using the Decorator pattern keeps the code clean, modular, and
+easy to maintain.

@@ -6,6 +6,7 @@ import com.dev.servlet.application.dto.request.Request;
 import com.dev.servlet.application.service.BusinessService;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.ProductMapper;
+import com.dev.servlet.core.util.CacheUtils;
 import com.dev.servlet.domain.model.pojo.domain.Category;
 import com.dev.servlet.domain.model.pojo.domain.Inventory;
 import com.dev.servlet.domain.model.pojo.domain.Product;
@@ -42,11 +43,12 @@ public class ProductService extends BaseService<Product, Long> {
     public static final String NAME = "name";
     public static final String CATEGORY = "category";
     public static final int ERROR_CODE_404 = 404;
+    public static final String PRODUCT_CACHE_KEY = "product_cache_key";
 
     private BusinessService businessService;
 
     @Inject
-    protected ProductService(ProductDAO dao) {
+    public ProductService(ProductDAO dao) {
         super(dao);
     }
 
@@ -55,7 +57,12 @@ public class ProductService extends BaseService<Product, Long> {
         this.businessService = businessService;
     }
 
-    protected ProductDAO getDAO() {
+    public void clearCache(String token) {
+        log.info("Clearing cache for token: {}", token);
+        CacheUtils.clear(PRODUCT_CACHE_KEY, token);
+    }
+
+    public ProductDAO getDAO() {
         return (ProductDAO) super.getBaseDAO();
     }
 

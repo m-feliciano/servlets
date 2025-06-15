@@ -56,18 +56,18 @@ public class ProductWebScrapeApiClient extends ScrapeApiClient<List<ProductWebSc
         int MAX_PAGES = 50; // Avoid scraping too many pages
         do {
             String url = scrapeRequest.getUrl().replace("<page>", String.valueOf(page));
-            log.debug("[Scraping] Scraping page {}: {}", page, url);
+            log.debug("Scraping page {}: {}", page, url);
 
             Request request = new Request.Builder().url(url).get().build();
 
             try (Response response = client.newCall(request).execute()) {
                 if (!response.isSuccessful() || response.body() == null) {
-                    log.warn("[Scraping] Error retrieving page {}: {}", page, response.message());
+                    log.error("Error retrieving page {}: {}", page, response.message());
                     throw new ServiceException(response.message());
                 }
 
                 String responseBody = response.body().string();
-                log.debug("[Scraping] Response body for page {}: {}", page, responseBody);
+                log.debug("Response body for page {}: {}", page, responseBody);
 
                 TypeReference<WebScrapingResponse<ProductWebScrapeDTO>> typeReference = new TypeReference<>() {
                 };
@@ -78,18 +78,18 @@ public class ProductWebScrapeApiClient extends ScrapeApiClient<List<ProductWebSc
                 pageTotal = scrapingResponse.getPageTotal();
 
             } catch (Exception e) {
-                log.error("[Scraping] Error fetching page {}: {}", page, e.getMessage(), e);
-                throw new ServiceException("[Scraping] Error fetching page " + page + ": " + e.getMessage());
+                log.error("Error fetching page {}: {}", page, e.getMessage(), e);
+                throw new ServiceException("Error fetching page " + page + ": " + e.getMessage());
             }
 
             page++;
         } while (page < pageTotal && page <= MAX_PAGES);
 
         if (page > MAX_PAGES) {
-            log.debug("[Scraping] Maximum number of pages reached: {}. Stopping scraping.", MAX_PAGES);
+            log.warn("Maximum number of pages reached: {}. Stopping scraping.", MAX_PAGES);
         }
 
-        log.debug("[Scraping] Scraping completed. Total pages scraped: {}", responses.size());
+        log.debug("Scraping completed. Total pages scraped: {}", responses.size());
         return responses;
     }
 }

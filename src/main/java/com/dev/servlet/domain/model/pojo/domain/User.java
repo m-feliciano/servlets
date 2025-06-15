@@ -20,6 +20,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +60,9 @@ public class User implements Identifier<Long> {
     @CollectionTable(name = "user_perfis", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "perfil_id")
     private List<Long> perfis;
+
+    @Transient
+    private String token;
 
     public User(Long id) {
         this.id = id;

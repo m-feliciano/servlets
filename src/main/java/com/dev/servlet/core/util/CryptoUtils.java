@@ -141,6 +141,7 @@ public final class CryptoUtils {
 
         User user = new User(userId);
         user.setPerfis(roles);
+        user.setToken(token);
         return user;
     }
 }

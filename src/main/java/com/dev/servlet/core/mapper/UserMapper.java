@@ -17,18 +17,21 @@ public final class UserMapper {
                 .imgUrl(user.getImgUrl())
                 .perfis(user.getPerfis())
                 .config(user.getConfig())
+                .token(user.getToken())
                 .build();
     }
 
     public static UserDTO onlyId(User user) {
         if (user == null) return null;
-        return UserDTO.builder().id(user.getId()).build();
+        return UserDTO.builder().id(user.getId()).token(user.getToken()).build();
     }
 
-    public static User onlyId(UserDTO user) {
-        if (user == null) return null;
+    public static User onlyId(UserDTO userDTO) {
+        if (userDTO == null) return null;
 
-        return new User(user.getId());
+        User user = new User(userDTO.getId());
+        user.setToken(userDTO.getToken());
+        return user;
     }
 
     public static User full(UserDTO dto) {
@@ -39,6 +42,7 @@ public final class UserMapper {
         user.setPerfis(dto.getPerfis());
         user.setConfig(dto.getConfig());
         user.setPassword(dto.getPassword());
+        user.setToken(dto.getToken());
         return user;
     }
 }

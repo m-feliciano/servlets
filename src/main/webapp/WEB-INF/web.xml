@@ -33,7 +33,7 @@
     </filter-mapping>
     <filter>
         <filter-name>SecurityAuthFilter</filter-name>
-        <filter-class>com.dev.servlet.infrastructure.security.Auth</filter-class>
+        <filter-class>com.dev.servlet.infrastructure.security.AuthFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>SecurityAuthFilter</filter-name>

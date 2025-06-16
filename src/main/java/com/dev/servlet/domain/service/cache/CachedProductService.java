@@ -1,4 +1,4 @@
-package com.dev.servlet.config;
+package com.dev.servlet.domain.service.cache;
 
 import com.dev.servlet.application.dto.ProductDTO;
 import com.dev.servlet.application.dto.request.Request;
@@ -43,7 +43,7 @@ public class CachedProductService {
      * @param token The user's authentication token
      * @return A cached decorator for the user
      */
-    private CachedServiceDecorator<Product, Long> getDecoratorForToken(String token) {
+    protected CachedServiceDecorator<Product, Long> getDecoratorForToken(String token) {
         return userCacheDecorators.computeIfAbsent(token,
                 key -> new CachedServiceDecorator<>(delegateService, "product", key));
     }

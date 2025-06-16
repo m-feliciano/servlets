@@ -264,34 +264,34 @@ See the section [Endpoints by Controller](#endpoints-by-controller) for a comple
 
 ### 🛒 ProductController
 
-| ⚡ Method | 🌐 Endpoint                      | 🔐 Auth  | 📝 Notes                |
-|----------|----------------------------------|----------|------------------------|
-| 🟢 GET   | /api/v1/product/list             | 🔒 Yes (Authentication required)   | List all products      |
-| 🟢 GET   | /api/v1/product/list/{id}        | 🔒 Yes (Authentication required)   | Product details        |
-| 🟠 POST  | /api/v1/product/create           | 🔒 Yes (Authentication required)   | Create product         |
-| 🟠 POST  | /api/v1/product/update/{id}      | 🔒 Yes (Authentication required)   | Update product         |
-| 🔴 POST  | /api/v1/product/delete/{id}      | 🔒 Yes (Authentication required)   | Delete product         |
-| �� GET   | /api/v1/product/new              | 🔒 Yes (Authentication required)   | New product form       |
-| 🟢 GET   | /api/v1/product/edit/{id}        | 🔒 Yes (Authentication required)   | Edit product form      |
-| 🟢 GET   | /api/v1/product/scrape           | 🔒 Yes (Authentication required)   | Scrape product data    |
+| ⚡ Method | 🌐 Endpoint                 | 🔐 Auth           | 📝 Notes            |
+|----------|-----------------------------|-------------------|---------------------|
+| 🟢 GET   | /api/v1/product/list        | 🔒 Yes (Required) | List all products   |
+| 🟢 GET   | /api/v1/product/list/{id}   | 🔒 Yes (Required) | Product details     |
+| 🟠 POST  | /api/v1/product/create      | 🔒 Yes (Required) | Create product      |
+| 🟠 POST  | /api/v1/product/update/{id} | 🔒 Yes (Required) | Update product      |
+| 🔴 POST  | /api/v1/product/delete/{id} | 🔒 Yes (Required) | Delete product      |
+| �� GET   | /api/v1/product/new         | 🔒 Yes (Required) | New product form    |
+| 🟢 GET   | /api/v1/product/edit/{id}   | 🔒 Yes (Required) | Edit product form   |
+| 🟢 GET   | /api/v1/product/scrape      | 🔒 Yes (Required) | Scrape product data |
 
 ### 👤 UserController
 
-| ⚡ Method | 🌐 Endpoint                  | 🔐 Auth   | 📝 Notes                |
-|----------|------------------------------|-----------|------------------------|
-| 🟠 POST  | /api/v1/user/update/{id}     | 🔒 Yes (Authentication required)    | Update user            |
-| 🔴 POST  | /api/v1/user/delete/{id}     | 🛡️ Admin (Admin only)               | Delete user (admin)    |
-| 🟠 POST  | /api/v1/user/registerUser    | 🔓 No (Public)                      | Register new user      |
-| 🟢 GET   | /api/v1/user/list/{id}       | 🔒 Yes (Authentication required)    | User details           |
+| ⚡ Method | 🌐 Endpoint               | 🔐 Auth                | 📝 Notes            |
+|----------|---------------------------|------------------------|---------------------|
+| 🟠 POST  | /api/v1/user/update/{id}  | 🔒 Yes (Required)      | Update user         |
+| 🔴 POST  | /api/v1/user/delete/{id}  | 🛡️ Admin (Admin only) | Delete user (admin) |
+| 🟠 POST  | /api/v1/user/registerUser | 🔓 No (Public)         | Register new user   |
+| 🟢 GET   | /api/v1/user/list/{id}    | 🔒 Yes (Required)      | User details        |
 
 ### 🔑 LoginController
 
-| ⚡ Method | 🌐 Endpoint                | 🔐 Auth                          | 📝 Notes          |
-|----------|----------------------------|----------------------------------|-------------------|
-| 🟢 GET   | /api/v1/login/registerPage | 🔓 No (Public)                   | Registration form |
-| 🟢 GET   | /api/v1/login/form         | 🔓 No (Public)                   | Login form        |
-| 🟠 POST  | /api/v1/login/login        | 🔓 No (Public)                   | Perform login     |
-| ��� POST | /api/v1/login/logout       | 🔒 Yes (Authentication required) | Perform logout    |
+| ⚡ Method | 🌐 Endpoint                | 🔐 Auth           | 📝 Notes          |
+|----------|----------------------------|-------------------|-------------------|
+| 🟢 GET   | /api/v1/login/registerPage | 🔓 No (Public)    | Registration form |
+| 🟢 GET   | /api/v1/login/form         | 🔓 No (Public)    | Login form        |
+| 🟠 POST  | /api/v1/login/login        | 🔓 No (Public)    | Perform login     |
+| ��� POST | /api/v1/login/logout       | 🔒 Yes (Required) | Perform logout    |
 
 ---
 
@@ -339,11 +339,17 @@ public final class ProductController extends BaseController<Product, Long> {
 
     // Example of a method that scrapes products from an external website
     @RequestMapping(value = "/scrape", method = RequestMethod.GET)
-    public IHttpResponse<Void> scrape(Request request, @Property("scrape.product.url") String url) throws Exception {
+    public IHttpResponse<Void> scrape(Request request,
+                                      @Property("env") String environment,
+                                      @Property("scrape.product.url") String url) throws Exception {
+
+        if (!"development".equals(environment)) {
+            log.warn("Web scraping is only allowed in development environment");
+            return HttpResponse.<Void>ok().next(redirectTo(LIST)).build();
+        }
 
         var webScrapeRequest = new WebScrapeRequest("product", url, null);
-        var registry = new WebScrapeServiceRegistry();
-        var webScrapeService = new WebScrapeService<List<ProductWebScrapeDTO>>(registry);
+        var webScrapeService = new WebScrapeService<List<ProductWebScrapeDTO>>(webScrapeServiceRegistry);
 
         Optional<List<ProductWebScrapeDTO>> response = webScrapeService.run(webScrapeRequest);
     }

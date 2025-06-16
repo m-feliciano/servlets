@@ -1,4 +1,4 @@
-package com.dev.servlet.auth;
+package com.dev.servlet.infrastructure.security.wrapper;
 
 import com.dev.servlet.infrastructure.security.wrapper.SecurityRequestWrapper;
 import org.junit.jupiter.api.BeforeEach;

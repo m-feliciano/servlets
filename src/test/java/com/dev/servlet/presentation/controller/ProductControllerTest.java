@@ -1,4 +1,4 @@
-package com.dev.servlet.controller;
+package com.dev.servlet.presentation.controller;
 
 import com.dev.servlet.application.dto.CategoryDTO;
 import com.dev.servlet.application.dto.ProductDTO;
@@ -12,11 +12,10 @@ import com.dev.servlet.core.mapper.Mapper;
 import com.dev.servlet.core.mapper.ProductMapper;
 import com.dev.servlet.domain.model.pojo.domain.Product;
 import com.dev.servlet.domain.service.CategoryService;
-import com.dev.servlet.domain.service.ProductService;
+import com.dev.servlet.domain.service.cache.CachedProductService;
 import com.dev.servlet.infrastructure.persistence.IPageable;
 import com.dev.servlet.infrastructure.persistence.impl.PageRequestImpl;
 import com.dev.servlet.infrastructure.persistence.impl.PageableImpl;
-import com.dev.servlet.presentation.controller.ProductController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.when;
 class ProductControllerTest {
 
     @Mock
-    private ProductService productService;
+    private CachedProductService productService;
 
     @Mock
     private CategoryService categoryService;
@@ -217,4 +216,3 @@ class ProductControllerTest {
         verify(productService, times(1)).getById(request);
     }
 }
-

@@ -1,6 +1,6 @@
 package com.dev.servlet.infrastructure.persistence.impl;
 
-import com.dev.servlet.application.dto.records.Sort;
+import com.dev.servlet.application.transfer.records.Sort;
 import com.dev.servlet.infrastructure.persistence.IPageable;
 import lombok.Builder;
 import lombok.Getter;

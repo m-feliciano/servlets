@@ -1,9 +1,9 @@
 package com.dev.servlet.domain.service;
 
 
-import com.dev.servlet.application.dto.InventoryDTO;
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.HttpResponse;
+import com.dev.servlet.application.transfer.dto.InventoryDTO;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.HttpResponse;
 import com.dev.servlet.application.service.BusinessService;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.InventoryMapper;

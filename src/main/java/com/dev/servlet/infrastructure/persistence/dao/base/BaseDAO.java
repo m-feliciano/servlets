@@ -1,7 +1,7 @@
 package com.dev.servlet.infrastructure.persistence.dao.base;
 
 
-import com.dev.servlet.application.dto.records.Sort;
+import com.dev.servlet.application.transfer.records.Sort;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.util.ClassUtil;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;

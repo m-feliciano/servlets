@@ -1,7 +1,7 @@
 package com.dev.servlet.domain.service;
 
-import com.dev.servlet.application.dto.DataTransferObject;
-import com.dev.servlet.application.dto.request.Request;
+import com.dev.servlet.application.transfer.dto.DataTransferObject;
+import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.core.mapper.Mapper;
 import com.dev.servlet.core.util.ClassUtil;
 import com.dev.servlet.core.util.CryptoUtils;

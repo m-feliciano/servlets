@@ -1,8 +1,8 @@
 package com.dev.servlet.domain.service;
 
-import com.dev.servlet.application.dto.ProductDTO;
-import com.dev.servlet.application.dto.records.Query;
-import com.dev.servlet.application.dto.request.Request;
+import com.dev.servlet.application.transfer.dto.ProductDTO;
+import com.dev.servlet.application.transfer.records.Query;
+import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.application.service.BusinessService;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.ProductMapper;
@@ -43,7 +43,7 @@ public class ProductService extends BaseService<Product, Long> {
     public static final String NAME = "name";
     public static final String CATEGORY = "category";
     public static final int ERROR_CODE_404 = 404;
-    public static final String PRODUCT_CACHE_KEY = "product_cache_key";
+    public static final String PRODUCT_PREFIX_CACHE_KEY = "product";
 
     private BusinessService businessService;
 
@@ -59,7 +59,7 @@ public class ProductService extends BaseService<Product, Long> {
 
     public void clearCache(String token) {
         log.info("Clearing cache for token: {}", token);
-        CacheUtils.clear(PRODUCT_CACHE_KEY, token);
+        CacheUtils.clearCacheKeyPrefix(PRODUCT_PREFIX_CACHE_KEY, token);
     }
 
     public ProductDAO getDAO() {

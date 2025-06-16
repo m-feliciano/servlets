@@ -2,6 +2,7 @@ package com.dev.servlet.infrastructure.external.webscrape;
 
 import com.dev.servlet.infrastructure.external.webscrape.service.ProductWebScrapeApiClient;
 
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import java.util.Map;
  * This class manages the registration and retrieval of web scrape services by type.
  * It allows for easy extension and addition of new web scrape services.
  */
+@Singleton
 public class WebScrapeServiceRegistry {
     private final Map<String, IWebScrapeService<?>> registry = new HashMap<>();
 

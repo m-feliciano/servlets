@@ -1,8 +1,8 @@
 package com.dev.servlet.core.adapter;
 
-import com.dev.servlet.application.dto.UserDTO;
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.IHttpResponse;
+import com.dev.servlet.application.transfer.dto.UserDTO;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.IHttpResponse;
 import com.dev.servlet.core.builder.HtmlTemplate;
 import com.dev.servlet.core.builder.RequestBuilder;
 import com.dev.servlet.core.exception.ServiceException;

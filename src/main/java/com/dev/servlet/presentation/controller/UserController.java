@@ -1,10 +1,10 @@
 package com.dev.servlet.presentation.controller;
 
 
-import com.dev.servlet.application.dto.UserDTO;
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.HttpResponse;
-import com.dev.servlet.application.dto.response.IHttpResponse;
+import com.dev.servlet.application.transfer.dto.UserDTO;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.HttpResponse;
+import com.dev.servlet.application.transfer.response.IHttpResponse;
 import com.dev.servlet.core.annotation.Constraints;
 import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.RequestMapping;

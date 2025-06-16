@@ -1,7 +1,7 @@
 package com.dev.servlet.core.validator;
 
 
-import com.dev.servlet.application.dto.request.Request;
+import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;

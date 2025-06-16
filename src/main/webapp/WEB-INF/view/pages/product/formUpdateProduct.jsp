@@ -1,6 +1,6 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ page import="com.dev.servlet.application.dto.response.IServletResponse" %>
+<%@ page import="com.dev.servlet.application.transfer.response.IServletResponse" %>
 <jsp:include page="/WEB-INF/view/components/header.jsp"/>
 <%@ include file="/WEB-INF/routes/product-routes.jspf" %>
 

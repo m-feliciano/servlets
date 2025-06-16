@@ -1,9 +1,9 @@
 package com.dev.servlet.domain.service;
 
 
-import com.dev.servlet.application.dto.CategoryDTO;
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.HttpResponse;
+import com.dev.servlet.application.transfer.dto.CategoryDTO;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.HttpResponse;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.CategoryMapper;
 import com.dev.servlet.core.util.CacheUtils;

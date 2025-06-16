@@ -1,7 +1,7 @@
 package com.dev.servlet.presentation.controller.base;
 
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.IHttpResponse;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.IHttpResponse;
 import com.dev.servlet.core.annotation.Property;
 import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.exception.ServiceException;

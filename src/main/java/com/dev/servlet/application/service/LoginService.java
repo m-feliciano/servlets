@@ -1,8 +1,8 @@
 package com.dev.servlet.application.service;
 
 
-import com.dev.servlet.application.dto.UserDTO;
-import com.dev.servlet.application.dto.request.Request;
+import com.dev.servlet.application.transfer.dto.UserDTO;
+import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.UserMapper;
 import com.dev.servlet.core.util.CacheUtils;

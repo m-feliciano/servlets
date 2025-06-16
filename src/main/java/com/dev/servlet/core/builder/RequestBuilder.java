@@ -1,8 +1,8 @@
 package com.dev.servlet.core.builder;
 
-import com.dev.servlet.application.dto.records.KeyPair;
-import com.dev.servlet.application.dto.records.Query;
-import com.dev.servlet.application.dto.request.Request;
+import com.dev.servlet.application.transfer.records.KeyPair;
+import com.dev.servlet.application.transfer.records.Query;
+import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.core.util.URIUtils;
 import lombok.Builder;
 

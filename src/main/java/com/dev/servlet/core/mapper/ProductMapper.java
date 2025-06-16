@@ -1,10 +1,10 @@
 package com.dev.servlet.core.mapper;
 
 
-import com.dev.servlet.application.dto.ProductDTO;
+import com.dev.servlet.application.transfer.dto.ProductDTO;
 import com.dev.servlet.domain.model.pojo.domain.Product;
 import com.dev.servlet.domain.model.pojo.enums.Status;
-import com.dev.servlet.infrastructure.external.webscrape.dto.ProductWebScrapeDTO;
+import com.dev.servlet.infrastructure.external.webscrape.transfer.ProductWebScrapeDTO;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

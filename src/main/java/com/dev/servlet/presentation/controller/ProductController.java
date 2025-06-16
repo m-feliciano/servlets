@@ -1,13 +1,12 @@
 package com.dev.servlet.presentation.controller;
 
-import com.dev.servlet.application.dto.CategoryDTO;
-import com.dev.servlet.application.dto.ProductDTO;
-import com.dev.servlet.application.dto.records.KeyPair;
-import com.dev.servlet.application.dto.request.Request;
-import com.dev.servlet.application.dto.response.HttpResponse;
-import com.dev.servlet.application.dto.response.IHttpResponse;
-import com.dev.servlet.application.dto.response.IServletResponse;
-import com.dev.servlet.config.CachedProductService;
+import com.dev.servlet.application.transfer.dto.CategoryDTO;
+import com.dev.servlet.application.transfer.dto.ProductDTO;
+import com.dev.servlet.application.transfer.records.KeyPair;
+import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.application.transfer.response.HttpResponse;
+import com.dev.servlet.application.transfer.response.IHttpResponse;
+import com.dev.servlet.application.transfer.response.IServletResponse;
 import com.dev.servlet.core.annotation.Constraints;
 import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.Property;
@@ -15,16 +14,16 @@ import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.ProductMapper;
-import com.dev.servlet.core.util.CacheUtils;
 import com.dev.servlet.domain.model.pojo.domain.Product;
 import com.dev.servlet.domain.model.pojo.domain.User;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
 import com.dev.servlet.domain.model.pojo.enums.Status;
 import com.dev.servlet.domain.service.CategoryService;
+import com.dev.servlet.domain.service.cache.CachedProductService;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeRequest;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeService;
 import com.dev.servlet.infrastructure.external.webscrape.WebScrapeServiceRegistry;
-import com.dev.servlet.infrastructure.external.webscrape.dto.ProductWebScrapeDTO;
+import com.dev.servlet.infrastructure.external.webscrape.transfer.ProductWebScrapeDTO;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;
 import com.dev.servlet.infrastructure.persistence.IPageable;
 import com.dev.servlet.presentation.controller.base.BaseController;
@@ -51,6 +50,7 @@ public class ProductController extends BaseController<Product, Long> {
 
     private CachedProductService productService;
     private CategoryService categoryService;
+    private WebScrapeServiceRegistry webScrapeServiceRegistry;
 
     private static Product prepareProductToSave(Product product, User user) {
         Date now = new Date();
@@ -68,6 +68,11 @@ public class ProductController extends BaseController<Product, Long> {
     @Inject
     public void setCategoryService(CategoryService categoryService) {
         this.categoryService = categoryService;
+    }
+
+    @Inject
+    public void setWebScrapeServiceRegistry(WebScrapeServiceRegistry webScrapeServiceRegistry) {
+        this.webScrapeServiceRegistry = webScrapeServiceRegistry;
     }
 
     /**
@@ -255,11 +260,17 @@ public class ProductController extends BaseController<Product, Long> {
      * @throws Exception if any error occurs
      */
     @RequestMapping(value = "/scrape", method = RequestMethod.GET)
-    public IHttpResponse<Void> scrape(Request request, @Property("scrape.product.url") String url) throws Exception {
+    public IHttpResponse<Void> scrape(Request request,
+                                      @Property("env") String environment,
+                                      @Property("scrape.product.url") String url) throws Exception {
+
+        if (!"development".equals(environment)) {
+            log.warn("Web scraping is only allowed in development environment");
+            return HttpResponse.<Void>ok().next(redirectTo(LIST)).build();
+        }
 
         var webScrapeRequest = new WebScrapeRequest("product", url, null);
-        var registry = new WebScrapeServiceRegistry();
-        var webScrapeService = new WebScrapeService<List<ProductWebScrapeDTO>>(registry);
+        var webScrapeService = new WebScrapeService<List<ProductWebScrapeDTO>>(webScrapeServiceRegistry);
 
         Optional<List<ProductWebScrapeDTO>> response = webScrapeService.run(webScrapeRequest);
         response.ifPresent((res) -> {
@@ -276,10 +287,9 @@ public class ProductController extends BaseController<Product, Long> {
                         .toList();
                 try {
                     products = productService.saveAll(products, request.token());
-                    CacheUtils.clearCacheKeyPrefix("product", request.token());
 
                 } catch (ServiceException e) {
-                    throw new RuntimeException(e);
+                    log.error("Error saving scraped products: {}", e.getMessage(), e);
                 }
             }
         });

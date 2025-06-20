@@ -1,6 +1,6 @@
 package com.dev.servlet.domain.model.pojo.domain;
 
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import com.dev.servlet.domain.model.pojo.enums.RoleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,7 +32,7 @@ import java.util.List;
 @Table(name = "tb_user")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @ToString(exclude = "password")
-public class User implements Identifier<Long> {
+public class User implements Entity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

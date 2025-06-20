@@ -5,13 +5,13 @@ import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.core.mapper.Mapper;
 import com.dev.servlet.core.util.ClassUtil;
 import com.dev.servlet.core.util.CryptoUtils;
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import com.dev.servlet.domain.model.pojo.domain.User;
 import com.dev.servlet.domain.repository.ICrudRepository;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;
 import com.dev.servlet.infrastructure.persistence.IPageable;
 import com.dev.servlet.infrastructure.persistence.dao.base.BaseDAO;
-import com.dev.servlet.infrastructure.persistence.impl.PageableImpl;
+import com.dev.servlet.infrastructure.persistence.internal.PageableImpl;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,8 +28,8 @@ import java.util.Optional;
  * <p>
  * This layer is supposed to be the business layer, where we handle the request that the specializations will execute.
  *
- * @param <T> the entity extends {@linkplain Identifier} of {@linkplain K}
- * @param <K> the entity id
+ * @param <T> the entity extends {@linkplain Entity} of {@linkplain ID}
+ * @param <ID> the entity id
  * @implNote You should extend this class and provide a DAO specialization, which extends {@linkplain BaseDAO}.
  * @see BaseDAO
  */
@@ -38,11 +38,11 @@ import java.util.Optional;
 @Setter(AccessLevel.PROTECTED)
 @NoArgsConstructor
 @SuppressWarnings("unchecked")
-public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRepository<T, K> {
+public abstract class BaseService<T extends Entity<ID>, ID> implements ICrudRepository<T, ID> {
 
-    protected BaseDAO<T, K> baseDAO;
+    protected BaseDAO<T, ID> baseDAO;
 
-    protected BaseService(BaseDAO<T, K> baseDAO) {
+    protected BaseService(BaseDAO<T, ID> baseDAO) {
         this.baseDAO = baseDAO;
     }
 
@@ -57,7 +57,7 @@ public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRe
     }
 
     @Override
-    public T findById(K id) {
+    public T findById(ID id) {
         return baseDAO.findById(id);
     }
 
@@ -76,7 +76,7 @@ public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRe
         baseDAO.delete(object);
     }
 
-    protected Collection<K> findAllOnlyIds(T object) {
+    protected Collection<ID> findAllOnlyIds(T object) {
         return baseDAO.findAllOnlyIds(object);
     }
 
@@ -117,9 +117,9 @@ public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRe
     /**
      * Retrieve the transfer class
      *
-     * @return {@linkplain Class} of {@linkplain Identifier} type {@linkplain K}
+     * @return {@linkplain Class} of {@linkplain Entity} type {@linkplain ID}
      */
-    protected abstract Class<? extends DataTransferObject<K>> getTransferClass();
+    protected abstract Class<? extends DataTransferObject<ID>> getTransferClass();
 
     /**
      * Convert the object to the entity
@@ -141,7 +141,7 @@ public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRe
      * @author marcelo.feliciano
      */
     protected T getEntity(Request request) {
-        DataTransferObject<K> object = getTransferObject(request);
+        DataTransferObject<ID> object = getTransferObject(request);
         return Optional.ofNullable(object).map(this::toEntity).orElse(null);
     }
 
@@ -152,11 +152,11 @@ public abstract class BaseService<T extends Identifier<K>, K> implements ICrudRe
      * @return {@linkplain T} the entity
      * @author marcelo.feliciano
      */
-    protected <R extends DataTransferObject<K>> R getTransferObject(Request request) {
+    protected <R extends DataTransferObject<ID>> R getTransferObject(Request request) {
         var optional = ClassUtil.createInstance(getTransferClass());
         if (optional.isEmpty()) return null;
 
-        DataTransferObject<K> object = optional.get();
+        DataTransferObject<ID> object = optional.get();
         ClassUtil.fillObject(object, request.body());
         return (R) object;
     }

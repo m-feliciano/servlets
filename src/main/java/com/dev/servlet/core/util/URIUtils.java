@@ -4,7 +4,7 @@ import com.dev.servlet.application.transfer.records.KeyPair;
 import com.dev.servlet.application.transfer.records.Query;
 import com.dev.servlet.application.transfer.records.Sort;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;
-import com.dev.servlet.infrastructure.persistence.impl.PageRequestImpl;
+import com.dev.servlet.infrastructure.persistence.internal.PageRequestImpl;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 

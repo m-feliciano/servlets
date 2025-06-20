@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * Generic web scrape service.
  */
-public interface IWebScrapeService<T> {
+public interface IWebScrapeService<TResponse> {
 
     /**
      * Scrape data based on the provided request.
@@ -14,5 +14,5 @@ public interface IWebScrapeService<T> {
      * @return an Optional containing the scraped data, or empty if not found
      * @throws Exception if an error occurs during scraping
      */
-    Optional<T> scrape(WebScrapeRequest request) throws Exception;
+    Optional<TResponse> scrape(WebScrapeRequest request) throws Exception;
 }

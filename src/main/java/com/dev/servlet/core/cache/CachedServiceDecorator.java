@@ -2,7 +2,7 @@ package com.dev.servlet.core.cache;
 
 import com.dev.servlet.core.mapper.Mapper;
 import com.dev.servlet.core.util.CacheUtils;
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import com.dev.servlet.domain.repository.ICrudRepository;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;
 import com.dev.servlet.infrastructure.persistence.IPageable;
@@ -17,16 +17,16 @@ import java.util.Optional;
  * This implementation follows the Decorator pattern, allowing to dynamically add cache functionality
  * to existing repository implementations without modifying their code.
  *
- * @param <T> The entity type that extends {@link Identifier}
- * @param <K> The identifier type
+ * @param <T> The entity type that extends {@link Entity}
+ * @param <ID> The identifier type
  * @author marcelo.feliciano
  * @since 2.0
  */
 @Slf4j
 @NoArgsConstructor
-public class CachedServiceDecorator<T extends Identifier<K>, K> implements ICrudRepository<T, K> {
+public class CachedServiceDecorator<T extends Entity<ID>, ID> implements ICrudRepository<T, ID> {
 
-    private ICrudRepository<T, K> decorated;
+    private ICrudRepository<T, ID> decorated;
     private String cacheKeyPrefix;
     private String cacheToken;
 
@@ -37,14 +37,14 @@ public class CachedServiceDecorator<T extends Identifier<K>, K> implements ICrud
      * @param cacheKeyPrefix The prefix to use for cache keys
      * @param cacheToken     The token to use for cache isolation
      */
-    public CachedServiceDecorator(ICrudRepository<T, K> decorated, String cacheKeyPrefix, String cacheToken) {
+    public CachedServiceDecorator(ICrudRepository<T, ID> decorated, String cacheKeyPrefix, String cacheToken) {
         this.decorated = decorated;
         this.cacheKeyPrefix = cacheKeyPrefix;
         this.cacheToken = cacheToken;
     }
 
     @Override
-    public T findById(K id) {
+    public T findById(ID id) {
         if (id == null) return null;
 
         String cacheKey = cacheKeyPrefix + ":findById:" + id;

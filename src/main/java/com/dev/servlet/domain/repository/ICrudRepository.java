@@ -1,6 +1,6 @@
 package com.dev.servlet.domain.repository;
 
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 
 import java.util.Collection;
 
@@ -8,9 +8,9 @@ import java.util.Collection;
  * Interface to be implemented by all models.
  *
  * @param <T> the type of the object
- * @param <K> the type of the object's identifier
+ * @param <ID> the type of the object's identifier
  */
-public interface ICrudRepository<T extends Identifier<K>, K> extends IPagination<T> {
+public interface ICrudRepository<T extends Entity<ID>, ID> extends IPagination<T> {
 
     /**
      * Find an object by its identifier.
@@ -18,7 +18,7 @@ public interface ICrudRepository<T extends Identifier<K>, K> extends IPagination
      * @param id the identifier
      * @return the object
      */
-    T findById(K id);
+    T findById(ID id);
 
     /**
      * Find an object by its properties.

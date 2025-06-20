@@ -1,6 +1,6 @@
 package com.dev.servlet.domain.model.pojo.domain;
 
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,7 +31,7 @@ import java.util.Date;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name = "tb_product")
 @ToString(exclude = {"user", "category"})
-public class Product implements Identifier<Long> {
+public class Product implements Entity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

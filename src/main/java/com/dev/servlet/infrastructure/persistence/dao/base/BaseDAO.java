@@ -26,12 +26,12 @@ import java.util.List;
  * Base DAO
  *
  * @param <T> specialization
- * @param <E> identifier
+ * @param <ID> identifier
  * @implNote You should extend this class and provide a specialization
  */
 @Slf4j
 @NoArgsConstructor
-public abstract class BaseDAO<T, E> implements Serializable {
+public abstract class BaseDAO<T, ID> implements Serializable {
 
     protected static final String STATUS = "status";
     protected static final String USER = "user";
@@ -49,7 +49,7 @@ public abstract class BaseDAO<T, E> implements Serializable {
         specialization = ClassUtil.getSubClassType(this.getClass());
     }
 
-    public T findById(E id) {
+    public T findById(ID id) {
         return em.find(specialization, id);
     }
 
@@ -138,10 +138,10 @@ public abstract class BaseDAO<T, E> implements Serializable {
      * Get the id of all results
      *
      * @param filter {@linkplain T} specialization
-     * @return {@linkplain Collection} of {@linkplain E} identifiers of objects
+     * @return {@linkplain Collection} of {@linkplain ID} identifiers of objects
      * @throws UnsupportedOperationException if not implemented
      */
-    public Collection<E> findAllOnlyIds(T filter) {
+    public Collection<ID> findAllOnlyIds(T filter) {
         throw new UnsupportedOperationException(
                 "Method findAllOnlyIds is not implemented in " + this.getClass().getName());
     }

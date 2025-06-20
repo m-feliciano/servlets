@@ -1,6 +1,6 @@
 package com.dev.servlet.domain.model.pojo.domain;
 
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +20,7 @@ import javax.persistence.ManyToOne;
 @AllArgsConstructor
 @javax.persistence.Entity
 @javax.persistence.Table(name = "tb_inventory")
-public class Inventory implements Identifier<Long> {
+public class Inventory implements Entity<Long> {
 
     @Id
     @GeneratedValue(strategy = javax.persistence.GenerationType.IDENTITY)

@@ -1,6 +1,6 @@
 package com.dev.servlet.domain.model.pojo.domain;
 
-import com.dev.servlet.domain.model.Identifier;
+import com.dev.servlet.domain.model.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +30,7 @@ import java.util.List;
 @Table(name = "tb_category")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @ToString(of = {"id", "name"})
-public class Category implements Identifier<Long> {
+public class Category implements Entity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -7,7 +7,7 @@ import okhttp3.OkHttpClient;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class ScrapeApiClient<T> implements IWebScrapeService<T> {
+public abstract class ScrapeApiClient<TResponse> implements IWebScrapeService<TResponse> {
     protected OkHttpClient client;
     protected ObjectMapper objectMapper;
 

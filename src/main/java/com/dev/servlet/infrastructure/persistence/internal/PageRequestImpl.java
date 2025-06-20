@@ -1,4 +1,4 @@
-package com.dev.servlet.infrastructure.persistence.impl;
+package com.dev.servlet.infrastructure.persistence.internal;
 
 import com.dev.servlet.application.transfer.records.Sort;
 import com.dev.servlet.infrastructure.persistence.IPageRequest;

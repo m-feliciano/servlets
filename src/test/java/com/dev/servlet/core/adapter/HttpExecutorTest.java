@@ -6,10 +6,12 @@ import com.dev.servlet.application.transfer.response.IHttpResponse;
 import com.dev.servlet.core.interfaces.IHttpExecutor;
 import com.dev.servlet.core.util.BeanUtil;
 import com.dev.servlet.core.util.EndpointParser;
+import com.dev.servlet.core.util.HttpExecutorTestLogSuppressor;
 import com.dev.servlet.presentation.controller.base.BaseRouterController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +22,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-class HttpExecutorImplTest {
+@ExtendWith(HttpExecutorTestLogSuppressor.class)
+class HttpExecutorTest {
 
     private IHttpExecutor<?> httpExecutor;
     private Request request;
@@ -28,12 +31,12 @@ class HttpExecutorImplTest {
 
     @BeforeEach
     void setUp() {
-        httpExecutor = HttpExecutorImpl.newInstance();
+        httpExecutor = new HttpExecutor<>();
         request = mock(Request.class);
         parser = mock(EndpointParser.class);
 
         when(parser.getApiVersion()).thenReturn("v1");
-        when(parser.getController()).thenReturn("/testService");
+        when(parser.getController()).thenReturn("testService");
         when(parser.getEndpoint()).thenReturn("/test");
         when(request.endpoint()).thenReturn("/api/v1/testService/test");
     }
@@ -42,29 +45,27 @@ class HttpExecutorImplTest {
     @DisplayName(
             "Test send method with a valid request and a successful response. " +
             "It should return the expected IHttpResponse object.")
-    void testSend_Success() throws Exception {
+    void testCall_Success() throws Exception {
         BaseRouterController controller = mock(BaseRouterController.class);
         IHttpResponse<Object> expectedResponse = HttpResponse.ok().next("Next").build();
 
         when(request.endpoint()).thenReturn("/test");
+        when(controller.route(parser, request)).thenReturn(expectedResponse);
 
         try (MockedStatic<EndpointParser> parserMock = mockStatic(EndpointParser.class);
              MockedStatic<BeanUtil> beanUtilMock = mockStatic(BeanUtil.class)) {
+            when(BeanUtil.getResolver()).thenReturn(mock(BeanUtil.DependencyResolver.class));
 
             // Mock the static method to return the mocked parser
             parserMock.when(() -> EndpointParser.of(anyString())).thenReturn(parser);
+            beanUtilMock.when(() -> BeanUtil.getResolver().getService("testService")).thenReturn(controller);
 
-            when(BeanUtil.getResolver()).thenReturn(mock(BeanUtil.DependencyResolver.class));
-            beanUtilMock.when(() -> BeanUtil.getResolver().getService("/testService")).thenReturn(controller);
-
-            when(controller.route(parser, request)).thenReturn(expectedResponse);
-
-            IHttpResponse<?> response = httpExecutor.send(request);
+            IHttpResponse<?> response = httpExecutor.call(request);
 
             assertNotNull(response);
             assertEquals(expectedResponse, response);
             assertEquals("Next", response.next());
-            assertNull(response.errors());
+            assertNull(response.error());
         }
     }
 
@@ -72,18 +73,18 @@ class HttpExecutorImplTest {
     @DisplayName(
             "Test send method with a valid request and an error response. " +
             "It should return the expected IHttpResponse object with errors.")
-    void testSend_ServiceException() {
+    void testCall_ServiceException() {
         try (MockedStatic<EndpointParser> parserMock = mockStatic(EndpointParser.class);
              MockedStatic<BeanUtil> beanUtilMock = mockStatic(BeanUtil.class)) {
+            when(BeanUtil.getResolver()).thenReturn(mock(BeanUtil.DependencyResolver.class));
 
             parserMock.when(() -> EndpointParser.of(anyString())).thenReturn(parser);
-            beanUtilMock.when(() -> BeanUtil.getResolver().getService("testService")).thenReturn(null);
 
-            IHttpResponse<?> response = httpExecutor.send(request);
+            IHttpResponse<?> response = httpExecutor.call(request);
 
             assertNotNull(response);
             assertEquals(400, response.statusCode());
-            assertEquals("Error resolving service method for path: /testService", response.errors().iterator().next());
+            assertEquals("Error resolving service endpoint: /test", response.error());
         }
     }
 
@@ -91,17 +92,17 @@ class HttpExecutorImplTest {
     @DisplayName(
             "Test send method with a valid request and an unexpected exception. " +
             "It should return an IHttpResponse object with a 500 status code.")
-    void testSend_UnexpectedException() {
+    void testCall_UnexpectedException() {
         when(request.endpoint()).thenReturn("/test");
-        try (MockedStatic<EndpointParser> parserMock = mockStatic(EndpointParser.class)) {
 
+        try (MockedStatic<EndpointParser> parserMock = mockStatic(EndpointParser.class)) {
             parserMock.when(() -> EndpointParser.of("/test")).thenThrow(new RuntimeException("Unexpected error"));
 
-            IHttpResponse<?> response = httpExecutor.send(request);
+            IHttpResponse<?> response = httpExecutor.call(request);
 
             assertNotNull(response);
-            assertEquals(500, response.statusCode());
-            assertEquals("An unexpected error occurred.", response.errors().iterator().next());
+            assertEquals(400, response.statusCode());
+            assertEquals("Invalid endpoint: /test", response.error());
         }
     }
 }

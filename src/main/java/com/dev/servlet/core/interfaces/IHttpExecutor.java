@@ -6,11 +6,11 @@ import com.dev.servlet.application.transfer.response.IHttpResponse;
 /**
  * This interface is responsible for executing the HTTP request.
  *
- * @param <U> the type of the response body
+ * @param <TResponse> the type of the response body
  * @since 1.0.0
  */
 @FunctionalInterface
-public interface IHttpExecutor<U> {
+public interface IHttpExecutor<TResponse> {
 
     /**
      * Sends the request to the server.
@@ -18,5 +18,5 @@ public interface IHttpExecutor<U> {
      * @param request {@linkplain Request}
      * @return {@linkplain IHttpResponse}
      */
-    IHttpResponse<U> send(Request request);
+    IHttpResponse<TResponse> call(Request request);
 }

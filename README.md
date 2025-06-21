@@ -319,7 +319,7 @@ See the [Controller Example](#controller-example) for a template.
 
 ```java
 @Controller("/product")
-public final class ProductController extends BaseController<Product, Long> {
+public final class ProductController extends BaseController {
 
     @Inject
     private ProductService productService;

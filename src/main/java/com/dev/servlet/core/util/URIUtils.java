@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -49,44 +50,83 @@ public final class URIUtils {
     }
 
     /**
-     * Create the query object from the request.
+     * Get the query from the request.
      *
-     * @param request {@linkplain HttpServletRequest}
-     * @return {@linkplain Query}
+     * @param request
+     * @return
      */
     public static Query getQuery(HttpServletRequest request) {
-        HashMap<String, String> queryParams = new HashMap<>();
-        IPageRequest<?> pageRequest;
-
-        if (request.getQueryString() != null && !request.getQueryString().isEmpty()) {
-            List<KeyPair> params = parseQueryParams(request.getQueryString());
-            for (var param : params) {
-                queryParams.put(param.getKey(), ((String) param.value()).trim());
-            }
-
-            int page = Math.abs(Integer.parseInt(queryParams.getOrDefault("page", String.valueOf(DEFAULT_INITIAL_PAGE))));
-            int pageInitial = Math.max(page, DEFAULT_INITIAL_PAGE);
-
-            int limit = Math.abs(Integer.parseInt(queryParams.getOrDefault("limit", String.valueOf(DEFAULT_MIN_PAGE_SIZE))));
-            int pageSize = Math.max(limit, DEFAULT_MIN_PAGE_SIZE);
-
-            String sortField = queryParams.getOrDefault("sort", DEFAULT_SORT_FIELD);
-            Sort.Direction direction = Sort.Direction.from(queryParams.getOrDefault("order", DEFAULT_SORT_ORDER));
-
-            pageRequest = PageRequestImpl.builder()
-                    .initialPage(pageInitial)
-                    .pageSize(pageSize)
-                    .sort(Sort.by(sortField).direction(direction))
-                    .build();
-
-            String search = getParam(queryParams, "q");
-            String type = getParam(queryParams, "k");
-
-            return new Query(pageRequest, search, type);
+        String type = null;
+        String search = null;
+        IPageRequest<?> pageRequest = null;
+        if (hasQueryString(request)) {
+            Map<String, String> queryParams = extractQueryParameters(request);
+            pageRequest = createPageRequest(queryParams);
+            search = getParam(queryParams, "q");
+            type = getParam(queryParams, "k");
+        } else {
+            pageRequest = getDefaultPageValue();
         }
 
-        pageRequest = getDefaultPageValue();
-        return new Query(pageRequest, null, null);
+        return new Query(pageRequest, search, type);
+    }
+
+    private static boolean hasQueryString(HttpServletRequest request) {
+        String queryString = request.getQueryString();
+        return queryString != null && !queryString.isEmpty();
+    }
+
+    private static Map<String, String> extractQueryParameters(HttpServletRequest request) {
+        Map<String, String> queryParams = new HashMap<>();
+        List<KeyPair> params = parseQueryParams(request.getQueryString());
+
+        for (var param : params) {
+            queryParams.put(param.getKey(), ((String) param.value()).trim());
+        }
+        return queryParams;
+    }
+
+    /**
+     * Create a page request from the query parameters.
+     *
+     * @param queryParams {@linkplain Map} of query parameters
+     * @return {@linkplain IPageRequest}
+     */
+    private static IPageRequest<?> createPageRequest(Map<String, String> queryParams) {
+        int pageInitial = parsePageNumber(queryParams);
+        int pageSize = parsePageSize(queryParams);
+        Sort sort = createSort(queryParams);
+
+        return PageRequestImpl.builder()
+                .initialPage(pageInitial)
+                .pageSize(pageSize)
+                .sort(sort)
+                .build();
+    }
+
+    private static int parsePageNumber(Map<String, String> queryParams) {
+        try {
+            int page = Integer.parseInt(queryParams.getOrDefault("page", String.valueOf(DEFAULT_INITIAL_PAGE)));
+            return Math.max(Math.abs(page), DEFAULT_INITIAL_PAGE);
+        } catch (NumberFormatException e) {
+            return DEFAULT_INITIAL_PAGE;
+        }
+    }
+
+    private static int parsePageSize(Map<String, String> queryParams) {
+        try {
+            String parameter = queryParams.getOrDefault("limit", String.valueOf(DEFAULT_MIN_PAGE_SIZE));
+            int limit = Math.abs(Integer.parseInt(parameter));
+            return Math.max(limit, DEFAULT_MIN_PAGE_SIZE);
+        } catch (NumberFormatException e) {
+            return DEFAULT_MIN_PAGE_SIZE;
+        }
+    }
+
+    private static Sort createSort(Map<String, String> queryParams) {
+        String sortField = queryParams.getOrDefault("sort", DEFAULT_SORT_FIELD);
+        String order = queryParams.getOrDefault("order", DEFAULT_SORT_ORDER);
+        return Sort.by(sortField).direction(Sort.Direction.from(order));
     }
 
     /**
@@ -175,7 +215,7 @@ public final class URIUtils {
         };
     }
 
-    private static String getParam(HashMap<String, String> queryParams, String q) {
+    private static String getParam(Map<String, String> queryParams, String q) {
         String paramValue = queryParams.get(q);
         return paramValue != null ? URLDecoder.decode(paramValue, StandardCharsets.UTF_8) : null;
     }

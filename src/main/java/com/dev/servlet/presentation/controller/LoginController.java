@@ -1,24 +1,22 @@
 package com.dev.servlet.presentation.controller;
 
 
+import com.dev.servlet.application.service.LoginService;
 import com.dev.servlet.application.transfer.dto.UserDTO;
 import com.dev.servlet.application.transfer.request.Request;
 import com.dev.servlet.application.transfer.response.HttpResponse;
 import com.dev.servlet.application.transfer.response.IHttpResponse;
-import com.dev.servlet.application.service.LoginService;
 import com.dev.servlet.core.annotation.Constraints;
 import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.Property;
 import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;
-import com.dev.servlet.domain.model.pojo.domain.User;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
 import com.dev.servlet.domain.service.UserService;
 import com.dev.servlet.presentation.controller.base.BaseController;
 import lombok.NoArgsConstructor;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -27,7 +25,7 @@ import static com.dev.servlet.core.util.CryptoUtils.isValidToken;
 @NoArgsConstructor
 @Singleton
 @Controller("login")
-public class LoginController extends BaseController<User, Long> {
+public class LoginController extends BaseController {
 
     private static final String FORWARD_PAGES_FORM_LOGIN_JSP = "forward:pages/formLogin.jsp";
     private static final String FORWARD_PAGES_USER_FORM_CREATE_USER_JSP = "forward:pages/user/formCreateUser.jsp";
@@ -43,10 +41,6 @@ public class LoginController extends BaseController<User, Long> {
     @Inject
     public void setUserService(UserService userService) {
         this.userService = userService;
-    }
-
-    @PostConstruct
-    public void init() {
     }
 
     /**

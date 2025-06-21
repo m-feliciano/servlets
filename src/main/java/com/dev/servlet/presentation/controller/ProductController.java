@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -46,7 +47,7 @@ import static com.dev.servlet.core.util.CryptoUtils.getUser;
 @Slf4j
 @Singleton
 @Controller("product")
-public class ProductController extends BaseController<Product, Long> {
+public class ProductController extends BaseController {
 
     private CachedProductService productService;
     private CategoryService categoryService;
@@ -287,7 +288,7 @@ public class ProductController extends BaseController<Product, Long> {
                         .toList();
                 try {
                     products = productService.saveAll(products, request.token());
-
+                    Objects.requireNonNull(products);
                 } catch (ServiceException e) {
                     log.error("Error saving scraped products: {}", e.getMessage(), e);
                 }

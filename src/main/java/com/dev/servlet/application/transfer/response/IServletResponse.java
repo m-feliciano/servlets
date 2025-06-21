@@ -30,7 +30,7 @@ public interface IServletResponse extends IHttpResponse<Set<KeyPair>> {
                 .orElse(null);
     }
 
-    default Set<String> errors() {
+    default String error() {
         return null;
     }
 }

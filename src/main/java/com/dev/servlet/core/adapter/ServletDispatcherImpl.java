@@ -13,6 +13,7 @@ import com.dev.servlet.core.interfaces.IServletDispatcher;
 import com.dev.servlet.core.util.PropertiesUtil;
 import com.dev.servlet.core.util.URIUtils;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
-import java.util.Set;
 
 /**
  * This class is responsible for dispatching the request to the appropriate servlet.
@@ -35,15 +35,16 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Slf4j
+@NoArgsConstructor
 @ApplicationScoped
 public class ServletDispatcherImpl implements IServletDispatcher {
 
     public static final int WAIT_TIME = 600; // 600ms
 
-    private IRateLimiter rateLimiter;
-
     @Setter
     private boolean rateLimitEnabled;
+    private IHttpExecutor<?> httpExecutor;
+    private IRateLimiter rateLimiter;
 
     @Inject
     @Named("LeakyBucketImpl")
@@ -51,8 +52,10 @@ public class ServletDispatcherImpl implements IServletDispatcher {
         this.rateLimiter = rateLimiter;
     }
 
-    public ServletDispatcherImpl() {
-        // Empty constructor
+    @Inject
+    @Named("HttpExecutor")
+    public void setHttpExecutor(IHttpExecutor<?> httpExecutor) {
+        this.httpExecutor = httpExecutor;
     }
 
     @PostConstruct
@@ -95,9 +98,7 @@ public class ServletDispatcherImpl implements IServletDispatcher {
             }
 
             Request request = newRequest(httpServletRequest);
-
-            IHttpExecutor<?> httpExecutor = HttpExecutorImpl.newInstance();
-            IHttpResponse<?> httpResponse = executeRequest(httpExecutor, request);
+            IHttpResponse<?> httpResponse = httpExecutor.call(request);
 
             processResponse(httpServletRequest, httpServletResponse, request, httpResponse);
 
@@ -108,80 +109,6 @@ public class ServletDispatcherImpl implements IServletDispatcher {
             String message = "An error occurred while processing the request. Contact the support team.";
 
             writeResponseError(httpServletRequest, httpServletResponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
-        }
-    }
-
-    /**
-     * Execute the request.
-     *
-     * @param httpExecutor {@linkplain IHttpExecutor} HTTP executor
-     * @param request      {@linkplain Request} Internal request
-     * @return {@linkplain IHttpResponse} Internal response
-     */
-    private IHttpResponse<?> executeRequest(IHttpExecutor<?> httpExecutor, Request request) {
-        IHttpResponse<?> response;
-        if (request.retry() > 0) {
-            response = this.sendWithRetry(httpExecutor, request);
-        } else {
-            response = httpExecutor.send(request);
-        }
-        return response;
-    }
-
-    /**
-     * Execute the request with retry.
-     *
-     * @param httpExecutor {@linkplain IHttpExecutor} HTTP executor
-     * @param request      {@linkplain Request} Internal request
-     * @return {@linkplain IHttpResponse} Internal response
-     */
-    public <U> IHttpResponse<U> sendWithRetry(IHttpExecutor<U> httpExecutor, Request request) {
-        int attempt = -1;
-        IHttpResponse<U> response;
-
-        do {
-            attempt++;
-
-            response = httpExecutor.send(request);
-
-            if (response.errors() == null || response.errors().isEmpty()) {
-                break;
-            } else {
-                logErrors(response.errors());
-            }
-
-            if (request.retry() > attempt) {
-                waitBeforeRetry(attempt);
-                log.info("Retrying request {} attempt={}", request.endpoint(), attempt + 1);
-            }
-
-        } while (attempt < request.retry());
-
-        return response;
-    }
-
-    /**
-     * Log the errors.
-     *
-     * @param errors {@linkplain Set} of errors
-     */
-    private void logErrors(Set<String> errors) {
-        String messages = String.join(", ", errors);
-        log.error("Error executing request: {}", messages);
-    }
-
-    /**
-     * Wait before retrying the request.
-     * Example of exponential backoff: 2^attempt * 100 ms = 200 * 100 ms = 200 ms
-     *
-     * @param attempt the attempt number
-     */
-    private void waitBeforeRetry(int attempt) {
-        try {
-            long waitTime = (long) Math.pow(2, attempt) * 100; // Exponential backoff
-            Thread.sleep(waitTime);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -218,8 +145,8 @@ public class ServletDispatcherImpl implements IServletDispatcher {
      * @param response     {@linkplain IHttpResponse} Internal response
      */
     private void handleResponseErrors(HttpServletRequest httpRequest, HttpServletResponse httpResponse, IHttpResponse<?> response) {
-        if (response.errors() != null) {
-            String errors = String.join(", ", response.errors());
+        if (response.error() != null) {
+            String errors = String.join(", ", response.error());
             writeResponseError(httpRequest, httpResponse, response.statusCode(), errors);
         } else {
             httpResponse.setStatus(response.statusCode());

@@ -33,11 +33,14 @@ public final class CacheUtils {
 
     private static final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor();
     private static final ConcurrentMap<String, Long> lastAccessMap = new ConcurrentHashMap<>();
-    private static final long CACHE_IDLE_TIMEOUT_MINUTES = 60; // configurable
+    private static final long CACHE_IDLE_TIMEOUT_MINUTES;
 
     static {
-        cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
         log.info("Ehcache CacheManager initialized");
+        CACHE_IDLE_TIMEOUT_MINUTES = PropertiesUtil.getProperty("cache.timeout.minutes", 1440L);
+
+        cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
+
         // Start cleanup task
         cleaner.scheduleAtFixedRate(
                 CacheUtils::cleanupUnusedCaches,

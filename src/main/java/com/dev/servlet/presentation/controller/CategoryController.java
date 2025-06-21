@@ -9,7 +9,6 @@ import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;
-import com.dev.servlet.domain.model.pojo.domain.Category;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
 import com.dev.servlet.domain.service.CategoryService;
 import com.dev.servlet.presentation.controller.base.BaseController;
@@ -23,7 +22,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @Singleton
 @Controller("category")
-public class CategoryController extends BaseController<Category, Long> {
+public class CategoryController extends BaseController {
 
     private CategoryService categoryService;
 
@@ -47,7 +46,6 @@ public class CategoryController extends BaseController<Category, Long> {
      * Delete a category.
      *
      * @param request the request containing the category id
-     * @param service the injected CategoryService
      * @return {@linkplain IHttpResponse} with no content {@linkplain Void}
      * @throws ServiceException if an error occurs during deletion
      */
@@ -155,8 +153,8 @@ public class CategoryController extends BaseController<Category, Long> {
                             @Constraints(min = 1, message = "ID must be greater than or equal to {0}")
                     })
             })
-    public IHttpResponse<CategoryDTO> listById(Request request, @NotNull CategoryService service) throws ServiceException {
-        CategoryDTO category = service.listById(request);
+    public IHttpResponse<CategoryDTO> listById(Request request) throws ServiceException {
+        CategoryDTO category = categoryService.listById(request);
         // OK
         return okHttpResponse(category, forwardTo("formListCategory"));
     }

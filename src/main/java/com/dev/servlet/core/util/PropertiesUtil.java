@@ -2,8 +2,10 @@ package com.dev.servlet.core.util;
 
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,21 +24,7 @@ public final class PropertiesUtil {
      */
     public static String getProperty(String key) {
         try {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            URL resourceUrl = loader.getResource("");
-            Objects.requireNonNull(resourceUrl, "Resource URL is null");
-
-            String rootPath = resourceUrl.getPath();
-            String appConfigPath = rootPath + "app.properties";
-//            String catalogConfigPath = rootPath + "catalog";
-
-            Properties appProps = new Properties();
-            try (FileInputStream inStream = new FileInputStream(appConfigPath)) {
-                appProps.load(inStream);
-            }
-//            Properties catalogProps = new Properties();
-//            catalogProps.load(new FileInputStream(catalogConfigPath));
-
+            Properties appProps = getProperties();
             String property = appProps.getProperty(key);
 
             while (property != null && property.contains("{") && property.contains("}")) {
@@ -48,6 +36,24 @@ public final class PropertiesUtil {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @NotNull
+    private static Properties getProperties() throws IOException {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        URL resourceUrl = loader.getResource("");
+        Objects.requireNonNull(resourceUrl, "Resource URL is null");
+
+        String propFileName = ObjectUtils.defaultIfNull(
+                System.getProperty("app.config.file"), "app-prod.properties");
+
+        String rootPath = resourceUrl.getPath();
+        Properties appProps = new Properties();
+        try (FileInputStream inStream = new FileInputStream(rootPath + propFileName)) {
+            appProps.load(inStream);
+        }
+
+        return appProps;
     }
 
     /**
@@ -111,4 +117,3 @@ public final class PropertiesUtil {
         return List.of(array);
     }
 }
-

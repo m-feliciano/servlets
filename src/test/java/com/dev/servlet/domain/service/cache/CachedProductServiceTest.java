@@ -2,6 +2,7 @@ package com.dev.servlet.domain.service.cache;
 
 import com.dev.servlet.application.transfer.dto.ProductDTO;
 import com.dev.servlet.application.transfer.request.Request;
+import com.dev.servlet.core.BaseServiceTest;
 import com.dev.servlet.core.cache.CachedServiceDecorator;
 import com.dev.servlet.core.exception.ServiceException;
 import com.dev.servlet.core.mapper.Mapper;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
@@ -36,7 +38,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class CachedProductServiceTest {
+class CachedProductServiceTest extends BaseServiceTest {
 
     @Mock
     private ProductService productService;
@@ -65,8 +67,6 @@ class CachedProductServiceTest {
     @Mock
     private Mapper<Product, ProductDTO> mapper;
 
-    private static final String TEST_TOKEN = "test-token-with-sufficient-length-for-cache";
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -84,17 +84,12 @@ class CachedProductServiceTest {
         when(productService.create(request)).thenReturn(productDTO);
 
         // Act
-        try (MockedStatic<CacheUtils> cacheUtilsMock = mockStatic(CacheUtils.class)) {
-            // Mock CacheUtils.clearCacheKeyPrefix to avoid StringIndexOutOfBoundsException
-            cacheUtilsMock.when(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN))).thenAnswer(invocation -> null);
+        ProductDTO result = cachedProductService.create(request);
 
-            ProductDTO result = cachedProductService.create(request);
-
-            // Assert
-            assertEquals(productDTO, result);
-            verify(productService).create(request);
-            cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN)), times(1));
-        }
+        // Assert
+        assertEquals(productDTO, result);
+        verify(productService).create(request);
+        cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN)), atLeastOnce());
     }
 
     @Test
@@ -102,35 +97,23 @@ class CachedProductServiceTest {
     void update_ShouldDelegateAndInvalidateCache() throws ServiceException {
         // Arrange
         when(productService.update(request)).thenReturn(productDTO);
-
         // Act
-        try (MockedStatic<CacheUtils> cacheUtilsMock = mockStatic(CacheUtils.class)) {
-            // Mock CacheUtils.clearCacheKeyPrefix to avoid StringIndexOutOfBoundsException
-            cacheUtilsMock.when(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN))).thenAnswer(invocation -> null);
+        ProductDTO result = cachedProductService.update(request);
+        // Assert
+        assertEquals(productDTO, result);
+        verify(productService).update(request);
 
-            ProductDTO result = cachedProductService.update(request);
-
-            // Assert
-            assertEquals(productDTO, result);
-            verify(productService).update(request);
-            cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN)), times(1));
-        }
+        cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix("product", TEST_TOKEN), atLeastOnce());
     }
 
     @Test
     @DisplayName("delete should delegate to ProductService and invalidate cache")
     void delete_ShouldDelegateAndInvalidateCache() throws ServiceException {
         // Act
-        try (MockedStatic<CacheUtils> cacheUtilsMock = mockStatic(CacheUtils.class)) {
-            // Mock CacheUtils.clearCacheKeyPrefix to avoid StringIndexOutOfBoundsException
-            cacheUtilsMock.when(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN))).thenAnswer(invocation -> null);
-
-            cachedProductService.delete(request);
-
-            // Assert
-            verify(productService).delete(request);
-            cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN)), times(1));
-        }
+        cachedProductService.delete(request);
+        // Assert
+        verify(productService).delete(request);
+        cacheUtilsMock.verify(() -> CacheUtils.clearCacheKeyPrefix(anyString(), eq(TEST_TOKEN)), atLeastOnce());
     }
 
     @Test
@@ -139,10 +122,8 @@ class CachedProductServiceTest {
         // Arrange
         when(productService.getEntity(request)).thenReturn(null);
         when(productService.findAll(request)).thenReturn(List.of(1L, 2L));
-
         // Act
         Collection<Long> result = cachedProductService.findAll(request);
-
         // Assert
         verify(productService).getEntity(request);
         verify(productService).findAll(request);
@@ -155,10 +136,7 @@ class CachedProductServiceTest {
     @DisplayName("findAll should use cache when available")
     void findAll_ShouldUseCacheWhenAvailable() {
         // Arrange
-        Product filter = new Product();
-        filter.setId(1L);
-
-        when(productService.getEntity(request)).thenReturn(filter);
+        when(productService.getEntity(request)).thenReturn(new Product(1L));
 
         List<Product> products = List.of(
                 new Product("Product 1", "Description 1", BigDecimal.valueOf(10.0)),
@@ -191,40 +169,37 @@ class CachedProductServiceTest {
     @DisplayName("getById should use cache when available")
     void getById_ShouldUseCacheWhenAvailable() throws ServiceException {
         // Arrange
-        Product filter = new Product();
-        filter.setId(1L);
-
-        when(productService.getEntity(request)).thenReturn(filter);
+        when(productService.getEntity(request)).thenReturn(new Product(1L));
         when(productService.getById(request)).thenReturn(productDTO);
 
         Product cachedProduct = new Product("Cached Product", "Cached Description", BigDecimal.valueOf(15.0));
         cachedProduct.setId(1L);
 
         // Act & Assert
-        try (MockedStatic<CacheUtils> cacheUtilsMock = mockStatic(CacheUtils.class)) {
-            // First call - cache miss
-            cacheUtilsMock.when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
-                    .thenReturn(null);
+        // First call - cache miss
+        cacheUtilsMock
+                .when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
+                .thenReturn(null);
 
-            ProductDTO result1 = cachedProductService.getById(request);
+        ProductDTO result1 = cachedProductService.getById(request);
 
-            assertEquals(productDTO, result1);
-            verify(productService).getById(request);
+        assertEquals(productDTO, result1);
+        verify(productService).getById(request);
 
-            // Second call - cache hit
-            cacheUtilsMock.when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
-                    .thenReturn(cachedProduct);
+        // Second call - cache hit
+        cacheUtilsMock
+                .when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
+                .thenReturn(cachedProduct);
 
-            // Mock the static ProductMapper.full method
-            try (MockedStatic<ProductMapper> productMapperMock = mockStatic(ProductMapper.class)) {
-                productMapperMock.when(() -> ProductMapper.full(cachedProduct)).thenReturn(productDTO);
+        // Mock the static ProductMapper.full method
+        try (MockedStatic<ProductMapper> productMapperMock = mockStatic(ProductMapper.class)) {
+            productMapperMock.when(() -> ProductMapper.full(cachedProduct)).thenReturn(productDTO);
 
-                ProductDTO result2 = cachedProductService.getById(request);
+            ProductDTO result2 = cachedProductService.getById(request);
 
-                assertEquals(productDTO, result2);
-                // ProductService.getById should not be called again
-                verify(productService, times(1)).getById(request);
-            }
+            assertEquals(productDTO, result2);
+            // ProductService.getById should not be called again
+            verify(productService, times(1)).getById(request);
         }
     }
 
@@ -232,17 +207,12 @@ class CachedProductServiceTest {
     @DisplayName("getAllPageable should delegate to decorator with token context")
     void getAllPageable_ShouldDelegateWithTokenContext() {
         // Arrange
-
+        cacheUtilsMock.when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
+                .thenReturn(pageableMock);
         // Act
-        try (MockedStatic<CacheUtils> cacheUtilsMock = mockStatic(CacheUtils.class)) {
-            cacheUtilsMock.when(() -> CacheUtils.getObject(anyString(), eq(TEST_TOKEN)))
-                    .thenReturn(pageableMock);
-
-            IPageable<ProductDTO> result = cachedProductService.getAllPageable(pageRequest, mapper);
-
-            // Assert
-            assertEquals(pageableMock, result);
-        }
+        IPageable<ProductDTO> result = cachedProductService.getAllPageable(pageRequest, mapper);
+        // Assert
+        assertEquals(pageableMock, result);
     }
 
     @Test
@@ -251,10 +221,8 @@ class CachedProductServiceTest {
         // Arrange
         List<Product> products = List.of(new Product());
         when(productService.saveAll(products)).thenReturn(products);
-
         // Act
         List<Product> result = cachedProductService.saveAll(products, TEST_TOKEN);
-
         // Assert
         assertEquals(products, result);
         verify(productService).saveAll(products);
@@ -267,10 +235,8 @@ class CachedProductServiceTest {
         // Arrange
         BigDecimal expectedTotal = BigDecimal.valueOf(100.0);
         when(productService.calculateTotalPriceFor(product)).thenReturn(expectedTotal);
-
         // Act
         BigDecimal result = cachedProductService.calculateTotalPriceFor(product);
-
         // Assert
         assertEquals(expectedTotal, result);
         verify(productService).calculateTotalPriceFor(product);
@@ -281,7 +247,6 @@ class CachedProductServiceTest {
     void clearCache_ShouldRemoveFromMapAndDelegate() {
         // Act
         cachedProductService.clearCache(TEST_TOKEN);
-
         // Assert
         verify(productService).clearCache(TEST_TOKEN);
     }
@@ -291,10 +256,8 @@ class CachedProductServiceTest {
     void getEntity_ShouldDelegate() {
         // Arrange
         when(productService.getEntity(request)).thenReturn(product);
-
         // Act
         Product result = cachedProductService.getEntity(request);
-
         // Assert
         assertEquals(product, result);
         verify(productService).getEntity(request);

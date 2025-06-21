@@ -13,7 +13,6 @@ import com.dev.servlet.core.annotation.Controller;
 import com.dev.servlet.core.annotation.RequestMapping;
 import com.dev.servlet.core.annotation.Validator;
 import com.dev.servlet.core.exception.ServiceException;
-import com.dev.servlet.domain.model.pojo.domain.Inventory;
 import com.dev.servlet.domain.model.pojo.enums.RequestMethod;
 import com.dev.servlet.domain.service.CategoryService;
 import com.dev.servlet.domain.service.InventoryService;
@@ -28,7 +27,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Singleton
 @Controller("inventory")
-public class InventoryController extends BaseController<Inventory, Long> {
+public class InventoryController extends BaseController {
 
     private InventoryService inventoryService;
     private CategoryService categoryService;
@@ -163,7 +162,6 @@ public class InventoryController extends BaseController<Inventory, Long> {
      * Update an item.
      *
      * @param request {@linkplain Request}
-     * @param model   {@linkplain InventoryService}
      * @return the response {@linkplain IServletResponse} with the next path
      * @throws ServiceException if any error occurs
      */

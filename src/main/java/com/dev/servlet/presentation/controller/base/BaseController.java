@@ -5,7 +5,6 @@ import com.dev.servlet.application.transfer.response.HttpResponse;
 import com.dev.servlet.application.transfer.response.IHttpResponse;
 import com.dev.servlet.application.transfer.response.IServletResponse;
 import com.dev.servlet.core.annotation.Controller;
-import com.dev.servlet.domain.model.Entity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,12 +15,10 @@ import java.util.Set;
 /**
  * Base Controller for the application
  *
- * @param <T> the entity extends {@linkplain Entity} of {@linkplain K}
- * @param <K> the entity id type
  */
 @Slf4j
 @Getter(AccessLevel.PROTECTED)
-public abstract class BaseController<T extends Entity<K>, K> extends BaseRouterController {
+public abstract class BaseController extends BaseRouterController {
 
     // Common paths
     private static final String FORWARD_TO = "forward:pages/{webService}/{context}.jsp"; // forward:pages/product/formCreateProduct.jsp
@@ -55,7 +52,7 @@ public abstract class BaseController<T extends Entity<K>, K> extends BaseRouterC
      * @param id - the entity id
      * @return - the next path
      */
-    protected String redirectTo(K id) {
+    protected String redirectTo(Long id) {
         return redirectTo("list").concat("/" + id);
     }
 

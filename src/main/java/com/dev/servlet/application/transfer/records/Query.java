@@ -18,8 +18,8 @@ public final class Query {
     private final String search;
     private final String type;
 
-    public <T> IPageRequest<T> getPageRequest() {
-        return (IPageRequest<T>) pageRequest;
+    public <TRequest> IPageRequest<TRequest> getPageRequest() {
+        return (IPageRequest<TRequest>) pageRequest;
     }
 }
 

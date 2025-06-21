@@ -23,7 +23,7 @@ import javax.inject.Singleton;
 @NoArgsConstructor
 @Singleton
 @Controller("user")
-public class UserController extends BaseController<User, Long> {
+public class UserController extends BaseController {
 
     private UserService userService;
 

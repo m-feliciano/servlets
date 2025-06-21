@@ -45,12 +45,14 @@ class IServletDispatcherTest {
         httpRequest = mock(HttpServletRequest.class);
         httpResponse = mock(HttpServletResponse.class);
         rateLimiter = mock(IRateLimiter.class);
-        httpExecutor = mock(HttpExecutorImpl.class);
+        httpExecutor = mock(HttpExecutor.class);
         httpResponseMock = mock(IHttpResponse.class);
         printWriter = mock(PrintWriter.class);
 
-        ((ServletDispatcherImpl) servletDispatcher).setRateLimiter(rateLimiter);
-        ((ServletDispatcherImpl) servletDispatcher).setRateLimitEnabled(true);
+        var servletDispatcher = (ServletDispatcherImpl) this.servletDispatcher;
+        servletDispatcher.setRateLimiter(rateLimiter);
+        servletDispatcher.setRateLimitEnabled(true);
+        servletDispatcher.setHttpExecutor(httpExecutor);
 
         when(httpResponse.getWriter()).thenReturn(printWriter);
         when(httpRequest.getSession()).thenReturn(mock(HttpSession.class));
@@ -68,11 +70,10 @@ class IServletDispatcherTest {
         RequestDispatcher dispatcher = mock(RequestDispatcher.class);
         when(httpRequest.getRequestDispatcher("/WEB-INF/view/success.jsp")).thenReturn(dispatcher);
 
-        try (MockedStatic<HttpExecutorImpl> executorMockStatic = mockStatic(HttpExecutorImpl.class);
+        try (MockedStatic<HttpExecutor> executorMockStatic = mockStatic(HttpExecutor.class);
              MockedStatic<URIUtils> uriUtilsMockedStatic = mockStatic(URIUtils.class)) {
 
-            when(httpExecutor.send(any(Request.class))).thenReturn(httpResponseMock);
-            executorMockStatic.when(HttpExecutorImpl::newInstance).thenReturn(httpExecutor);
+            when(httpExecutor.call(any(Request.class))).thenReturn(httpResponseMock);
 
             // Act: Call the method under test
             servletDispatcher.dispatch(httpRequest, httpResponse);
@@ -80,7 +81,7 @@ class IServletDispatcherTest {
             // Assert: Verify the expected behavior
             verify(dispatcher).forward(httpRequest, httpResponse);
             verify(rateLimiter).acquireOrWait(ServletDispatcherImpl.WAIT_TIME);
-            verify(httpExecutor).send(any(Request.class));
+            verify(httpExecutor).call(any(Request.class));
         }
     }
 
@@ -92,11 +93,10 @@ class IServletDispatcherTest {
         // Arrange: Set up mocks and expected behavior
         when(httpResponseMock.next()).thenReturn("redirect:/somewhere");
 
-        try (MockedStatic<HttpExecutorImpl> executorMockStatic = mockStatic(HttpExecutorImpl.class);
+        try (MockedStatic<HttpExecutor> executorMockStatic = mockStatic(HttpExecutor.class);
              MockedStatic<URIUtils> uriUtilsMockedStatic = mockStatic(URIUtils.class)) {
 
-            when(httpExecutor.send(any(Request.class))).thenReturn(httpResponseMock);
-            executorMockStatic.when(HttpExecutorImpl::newInstance).thenReturn(httpExecutor);
+            when(httpExecutor.call(any(Request.class))).thenReturn(httpResponseMock);
 
             // Act: Call the method under test
             servletDispatcher.dispatch(httpRequest, httpResponse);
@@ -127,7 +127,11 @@ class IServletDispatcherTest {
         when(rateLimiter.acquireOrWait(anyInt())).thenReturn(true);
 
         try (MockedStatic<Request> requestMock = mockStatic(Request.class)) {
-            requestMock.when(() -> RequestBuilder.newBuilder().httpServletRequest(httpRequest).complete().retry(1).build())
+            requestMock.when(() -> RequestBuilder.newBuilder()
+                            .httpServletRequest(httpRequest)
+                            .complete()
+                            .retry(1)
+                            .build())
                     .thenThrow(new RuntimeException("Unexpected error"));
 
 
